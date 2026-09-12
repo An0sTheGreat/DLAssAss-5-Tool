@@ -377,9 +377,44 @@
                                                  </Style>
                                              </Button.Style>
                                          </Button>
-                                         <Button Content="INSTALL" Background="{StaticResource AccentBrush}" Foreground="#101216"
+                                         <Button Content="{Binding SelectedGame.AddonActionLabel, TargetNullValue=INSTALL}" Background="{StaticResource AccentBrush}" Foreground="#101216"
                                                  BorderBrush="{StaticResource AccentBrush}" FontWeight="Bold" Click="Install_Click" />
-                                         <Button Content="PLAY" Click="Play_Click" />
+                                         <Grid Margin="0,0,8,8">
+                                             <Button Content="PLAY" Click="Play_Click" Margin="0" />
+                                             <Border BorderBrush="{StaticResource AccentBrush}" BorderThickness="1"
+                                                     CornerRadius="4" IsHitTestVisible="False">
+                                                 <Border.Style>
+                                                     <Style TargetType="Border">
+                                                         <Setter Property="Opacity" Value="0" />
+                                                         <Setter Property="Visibility" Value="Collapsed" />
+                                                         <Style.Triggers>
+                                                             <MultiDataTrigger>
+                                                                 <MultiDataTrigger.Conditions>
+                                                                     <Condition Binding="{Binding SelectedGame.HasReShade}" Value="True" />
+                                                                     <Condition Binding="{Binding SelectedGame.HasAddon}" Value="True" />
+                                                                 </MultiDataTrigger.Conditions>
+                                                                 <Setter Property="Visibility" Value="Visible" />
+                                                                 <MultiDataTrigger.EnterActions>
+                                                                     <BeginStoryboard x:Name="PlayReadyPulse">
+                                                                         <Storyboard>
+                                                                             <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="0.8"
+                                                                                              Duration="0:0:1.4" AutoReverse="True" RepeatBehavior="Forever">
+                                                                                 <DoubleAnimation.EasingFunction>
+                                                                                     <SineEase EasingMode="EaseInOut" />
+                                                                                 </DoubleAnimation.EasingFunction>
+                                                                             </DoubleAnimation>
+                                                                         </Storyboard>
+                                                                     </BeginStoryboard>
+                                                                 </MultiDataTrigger.EnterActions>
+                                                                 <MultiDataTrigger.ExitActions>
+                                                                     <RemoveStoryboard BeginStoryboardName="PlayReadyPulse" />
+                                                                 </MultiDataTrigger.ExitActions>
+                                                             </MultiDataTrigger>
+                                                         </Style.Triggers>
+                                                     </Style>
+                                                 </Border.Style>
+                                             </Border>
+                                         </Grid>
                                          <Button Content="RESTORE LATEST" Click="Restore_Click" />
                                         <Button Content="OPEN FOLDER" Click="OpenGameFolder_Click" />
                                     </WrapPanel>

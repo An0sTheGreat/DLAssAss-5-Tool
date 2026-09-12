@@ -9,11 +9,13 @@
     <RootNamespace>DLSS5ManAger</RootNamespace>
     <Product>DLAssAss 5 Tool</Product>
     <ApplicationIcon>assets\icon_dark.ico</ApplicationIcon>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
+    <FileVersion>1.0.3.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="Tests\**\*.cs" />
+    <Page Remove="Tests\**\*.xaml" />
     <Resource Include="assets\icon_dark.ico" />
     <Resource Include="assets\icon_dark.png" />
     <Resource Include="assets\logo_light.png" />

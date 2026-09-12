@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Build version: v.1.0.2**
+**Version 1.0.3** — [Download the Windows release](../../releases/tag/v.1.0.3)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
@@ -26,34 +26,61 @@ API support does not guarantee correct results in every game. Version 1.0.2:
 duplicate NR processing through nested callbacks; this is not a universal
 Frame Generation compatibility guarantee.
 
-**Known issue:** BOTDW may freeze after alt-tabbing or leaving it unfocused,
+**Known issues:** Cyberpunk shimmering remains unresolved; this release fixes a
+separate pass-transition/control failure, not the shimmering itself. BOTDW may
+freeze after alt-tabbing or leaving it unfocused,
 then toggling NR or changing settings. This remains unresolved; see the deferred
 [BOTDW Freeze Plan](docs/BOTDW_FREEZE_PLAN.md).
 
-## New addon controls in v.1.0.2
+## Addon controls and current improvements
 
 - **Neural Detail and Colour:** Neural Transfer Strength, Neural Color Strength
   and Neural Sharpness now work at all supported DX12 NR resolutions, including
   100%. Transfer 100%, colour 100% and sharpness 0% retain the native first-pass
   bypass at 100% resolution. Non-neutral settings use additional GPU working
   textures/resolve work, with the existing memory and fence protections.
-- **Per-Pass Controls:** customize additional passes independently or leave them
-  inherited. Only enabled passes appear. Sections start expanded and remember
+- The main **Neural Detail and Colour** section controls **Pass 1 only**.
+- **Per-Pass Controls:** each additional pass has independent transfer, colour
+  and sharpness controls; changes to Pass 1 no longer propagate to later passes.
+  Only enabled passes appear. Sections start expanded and remember
   your collapsed/expanded choices across restarts, including temporarily hidden
-  passes. Per-pass hue-stable detail and colour coupling remain available.
-- Old global hue-stable detail/coupling values are ignored; saved explicit
-  per-pass values remain intact. Settings are stored per game in ReShade's
+  passes. Hue-stable detail and colour coupling have been removed from every pass.
+- Defaults: colour **50%**, sharpness **0%**, transfer **100%**. Existing saved
+  base settings and enabled per-pass overrides are preserved. Old disabled
+  overrides start from the new independent defaults. Retired detail/coupling
+  keys are ignored. Settings are stored per game in ReShade's
   configuration, independently of the three original preset banks.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.0.3.4** (manager version is **1.0.2**).
+  shows addon file version **1.0.3.12** (manager file version **1.0.3.0**).
 
 These new image controls are DX12-only. Experimental DX11/Vulkan scope is unchanged.
 If safe working resources are unavailable, the addon retains native output.
 
 Upgrading the tool does not automatically update installed games. Close the game,
-select it in the tool, and choose **Install** to deploy the new bundled add-on.
+select it in the tool, and choose **Reinstall** to deploy the new bundled add-on.
 Existing libraries, settings, and backups retain their current storage location.
+**Reinstall ReShade** downloads the latest official full-addon build and uses
+Setup's update operation without shader packages. Existing ReShade proxy backups
+are kept beside their originals as `.dlss5manager-*.bak`; settings/presets are kept.
+
+Compatible sequential passes share a scratch working set while keeping source
+views separate and fence-owned. Compact native-resolution controls can recover
+after temporary allocation failure; the menu reports effective resolution when
+it differs from the request. The 512 MiB cache cap, VRAM reserve and safe fallback
+remain. Genuine resource exhaustion can still temporarily bypass controls.
+
+At 100% with neutral Pass 1, changing the pass count previously left later passes
+on native fallback. The first pass now participates in complete-group transition
+tracking, allowing additional-pass controls to resume. Sharpening stays independent
+of transfer, and interrupted dependent history resets on managed recovery.
+
+See [v.1.0.3 release notes and validation](docs/MANAGER_1_0_3_RELEASE.md).
+These changes do not establish that Cyberpunk shimmer is fixed or guarantee
+correct output in every game. Experimental API support is unchanged.
+
+PLAY has a soft green pulsing border only when the selected game has both ReShade
+and the add-on installed. The border disappears otherwise; launching is unchanged.
 
 The original standalone DLSS 5 Super Anus project is preserved on the
 [`DLSS-5-Super-Anus-Legacy`](../../tree/DLSS-5-Super-Anus-Legacy) branch.

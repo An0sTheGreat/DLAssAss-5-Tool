@@ -46,6 +46,17 @@ public sealed class ReShadeService
             ValidateInstaller(setupPath);
 
             var expectedProxy = ExpectedProxyName(graphicsApi);
+            var expectedPath = expectedProxy is null ? null : Path.Combine(Path.GetDirectoryName(executablePath)!, expectedProxy);
+            // Update mode bypasses Setup's first-install collision check.
+            // Never allow it to overwrite another mod's proxy.
+            if (expectedPath is not null && File.Exists(expectedPath) && !IsReShadeModule(expectedPath))
+                throw new InvalidOperationException($"{expectedProxy} already exists and is not a verified ReShade module.");
+            if (expectedPath is not null && File.Exists(expectedPath))
+            {
+                var backup = expectedPath + $".dlss5manager-{Guid.NewGuid():N}.bak";
+                File.Copy(expectedPath, backup);
+                proxyBackups.Add((expectedPath, backup));
+            }
             if (expectedProxy is not null)
             {
                 foreach (var path in game.ReShadeModulePaths.Where(path =>
@@ -63,12 +74,16 @@ public sealed class ReShadeService
             start.ArgumentList.Add("--headless");
             start.ArgumentList.Add("--api");
             start.ArgumentList.Add(api);
+            if (game.HasReShade)
+            {
+                start.ArgumentList.Add("--state");
+                start.ArgumentList.Add("update"); // Replaces binaries without installing shaders or removing presets.
+            }
             using var process = Process.Start(start) ?? throw new InvalidOperationException("ReShade Setup did not start.");
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
                 throw new InvalidOperationException($"ReShade Setup {release.Version} exited with code {process.ExitCode}.");
-            foreach (var (_, backup) in proxyBackups)
-                try { File.Delete(backup); } catch { }
+            // Keep successful reinstall backups for manual recovery.
             proxyBackups.Clear();
             return new(true, $"ReShade {release.Version} with full add-on support was installed for {graphicsApi} without shaders.");
         }
@@ -125,7 +140,7 @@ public sealed class ReShadeService
         var errors = new List<string>();
         foreach (var (original, backup) in backups.Reverse())
         {
-            try { if (File.Exists(backup) && !File.Exists(original)) File.Move(backup, original); }
+            try { if (File.Exists(backup)) File.Copy(backup, original, true); }
             catch (Exception ex) { errors.Add(ex.Message); }
         }
         return errors.Count == 0 ? "" : " ReShade proxy restoration also failed: " + string.Join("; ", errors);

@@ -1,5 +1,7 @@
 using DLSS5ManAger.Core;
 
+PlayPulseTest.Run();
+
 var root = Path.Combine(Path.GetTempPath(), "DLAssAss5Tool-" + Guid.NewGuid().ToString("N"));
 var game = Path.Combine(root, "steamapps", "common", "Game");
 var installDirectory = Path.Combine(game, "Bin", "Win64MasterMasterSteamPGO");
@@ -49,6 +51,13 @@ try
     Require(ReShadeService.ResolveInstallerApi("DX12") == "dxgi", "DX12 must use the DXGI ReShade proxy.");
     Require(ReShadeService.ResolveInstallerApi("DX11") == "dxgi", "DX11 must use the DXGI ReShade proxy.");
     Require(ReShadeService.ResolveInstallerApi("DX9") == "d3d9", "DX9 ReShade mapping failed.");
+    foreach (var api in new[] { "DX9", "DX11", "DX12", "OpenGL", "Vulkan", "DX12 / DX11" })
+    {
+        analysis.GraphicsApi = api;
+        analysis.HasReShade = analysis.HasAddon = true;
+        Require(analysis.CanInstallReShade && analysis.ReShadeActionLabel == "REINSTALL RESHADE" &&
+            analysis.AddonActionLabel == "REINSTALL", "Installed games must allow reinstallation.");
+    }
     Require(ReShadeService.ResolveInstallerApi("DX12 / DX11") is null &&
         ReShadeService.SupportedGraphicsApis("DX12 / DX11").SequenceEqual(["DX12", "DX11"]),
         "Multi-API games must require an explicit supported API selection.");
@@ -74,6 +83,13 @@ try
     Require(service.RestoreLatest(executable).Success, "Restore failed.");
     Require(File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == "original", "Original DLSS file was not restored.");
     Require(!File.Exists(Path.Combine(installDirectory, InstallerService.AddonName)), "New add-on was not removed by restore.");
+    Require(service.Install(executable, dlss, true).Success, "Second installation failed.");
+    File.WriteAllText(Path.Combine(payload, InstallerService.AddonName), "updated addon");
+    Require(service.Install(executable, dlss, true).Success, "Reinstallation failed.");
+    Require(File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "updated addon", "Reinstall did not replace the binary.");
+    Require(File.ReadAllText(Path.Combine(installDirectory, "ReShade.ini")) == "[GENERAL]", "Reinstall changed settings.");
+    Require(service.RestoreLatest(executable).Success && File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "addon",
+        "Reinstall backup did not restore the previous add-on.");
     File.Delete(Path.Combine(installDirectory, "ReShade.ini"));
     Require(!service.Install(executable, dlss, true).Success, "Install proceeded without ReShade beside the executable.");
     Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade API mapping, preferences, install, backup, and restore");

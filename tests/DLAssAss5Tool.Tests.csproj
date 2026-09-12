@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="..\MainWindow.xaml" Link="MainWindow.xaml" CopyToOutputDirectory="Always" />
     <Compile Include="..\GlobalUsings.cs" Link="GlobalUsings.cs" />
     <Compile Include="..\Core\DirectoryPath.cs" Link="Core\DirectoryPath.cs" />
     <Compile Include="..\Core\AppStore.cs" Link="Core\AppStore.cs" />

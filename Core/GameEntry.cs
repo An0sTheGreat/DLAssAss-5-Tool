@@ -52,15 +52,12 @@ public sealed class GameEntry : INotifyPropertyChanged
     public ImageSource? DisplayArt => CoverSource ?? IconSource;
     public string HideActionLabel => IsHidden ? "Unhide game" : "Hide game";
     public string ReShadeLabel => HasReShade ? "Detected" : "Not found";
-    public bool CanInstallReShade => ReShadeService.SupportedGraphicsApis(GraphicsApi).Count is > 1 ||
-        ReShadeService.ResolveInstallerApi(GraphicsApi) is not null && (!HasReShade || HasReShadeProxyMismatch);
-    public string ReShadeActionLabel => ReShadeService.SupportedGraphicsApis(GraphicsApi).Count > 1 && HasReShade
-        ? "CHANGE RESHADE API"
-        : HasReShadeProxyMismatch ? "REPAIR RESHADE"
-        : HasReShade ? "RESHADE INSTALLED!"
+    public bool CanInstallReShade => ReShadeService.SupportedGraphicsApis(GraphicsApi).Count > 0;
+    public string ReShadeActionLabel => HasReShade ? "REINSTALL RESHADE"
         : ReShadeService.SupportedGraphicsApis(GraphicsApi).Count == 0 ? "GRAPHICS API REQUIRED"
         : "INSTALL RESHADE";
     public string AddonLabel => HasAddon ? "Installed" : "Not installed";
+    public string AddonActionLabel => HasAddon ? "REINSTALL" : "INSTALL";
     public string DlssLabel => string.Join(" / ", new[]
     {
         HasDlss ? "SR" : null,

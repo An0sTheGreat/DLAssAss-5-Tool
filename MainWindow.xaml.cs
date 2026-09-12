@@ -248,8 +248,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (game is null) { Show("Select a game first."); return; }
         var targetDirectory = InstallerService.InstallDirectory(game.ExecutablePath);
         if (targetDirectory is null) { Show("The selected game does not have a usable executable."); return; }
-        if (!ThemedDialog.Confirm(this, "Confirm installation",
-            $"Install the add-on and available validated user-supplied DLSS files beside the selected executable:\n\n{targetDirectory}")) return;
+        if (!ThemedDialog.Confirm(this, game.HasAddon ? "Confirm reinstallation" : "Confirm installation",
+            $"{(game.HasAddon ? "Reinstall" : "Install")} the add-on and available validated user-supplied DLSS files beside the selected executable:\n\n{targetDirectory}\n\nExisting files are backed up; your settings are kept.")) return;
         await RunOperation("Installing…", () => _installer.Install(game.ExecutablePath!,
             DlssFilesDirectory, true));
     }
@@ -261,8 +261,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (!game.CanInstallReShade) return;
         var graphicsApi = SelectReShadeApi(game);
         if (graphicsApi is null) return;
-        if (!ThemedDialog.Confirm(this, "Install ReShade",
-            $"Download and install the latest official ReShade build with full add-on support for {graphicsApi} into:\n\n{game.ExecutablePath}\n\nNo shaders will be downloaded. The full add-on build is intended for single-player use.",
+        if (!ThemedDialog.Confirm(this, game.HasReShade ? "Reinstall ReShade" : "Install ReShade",
+            $"Download and {(game.HasReShade ? "reinstall" : "install")} the latest official ReShade build with full add-on support for {graphicsApi} into:\n\n{game.ExecutablePath}\n\nNo shaders will be downloaded. Existing settings and presets are kept. The full add-on build is intended for single-player use.",
             MessageBoxImage.Warning)) return;
 
         Activity = "Checking the latest official ReShade release…";

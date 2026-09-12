@@ -6,8 +6,8 @@ param(
 $ErrorActionPreference = "Stop"
 $managerRoot = Split-Path -Parent $PSScriptRoot
 $sourceAddon = Join-Path $managerRoot "Payload\renodx-dlss5-super-anus.addon64"
-$expectedAddonHash = "4213C8D2C820891448A33225C6E1EA592F760194FFFE5A5C167FC2C3CD54B9FD"
-$publishDirectory = Join-Path $managerRoot "artifacts\publish"
+$expectedAddonHash = "21C61735076FCB1FC0F439542F34D003F172D91D43253D5C1884EBD90C43714A"
+$publishDirectory = Join-Path $managerRoot "artifacts\publish-v1.0.3"
 $archive = Join-Path $managerRoot "artifacts\DLAssAss-5-Tool-$Runtime.zip"
 $fullManagerRoot = [IO.Path]::GetFullPath($managerRoot) + [IO.Path]::DirectorySeparatorChar
 if (-not ([IO.Path]::GetFullPath($publishDirectory).StartsWith($fullManagerRoot, [StringComparison]::OrdinalIgnoreCase))) {
@@ -24,7 +24,9 @@ if (-not (Test-Path -LiteralPath $sourceAddon)) { throw "Add-on payload not foun
 $addonHash = (Get-FileHash -LiteralPath $sourceAddon -Algorithm SHA256).Hash
 if ($addonHash -ne $expectedAddonHash) { throw "Unexpected add-on payload hash: $addonHash" }
 
-if (Test-Path -LiteralPath $publishDirectory) { Remove-Item -LiteralPath $publishDirectory -Recurse -Force }
+if ((Test-Path -LiteralPath $publishDirectory) -or (Test-Path -LiteralPath $archive)) {
+    throw "Release output already exists; preserve it and choose a fresh output path."
+}
 $project = Join-Path $managerRoot "DLAssAss5Tool.csproj"
 & $dotnet restore $project -r $Runtime --configfile (Join-Path $managerRoot "NuGet.Config")
 if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed." }
@@ -52,8 +54,9 @@ $checksums = @(
 ) | ForEach-Object { "$($_.Hash)  $($_.Path.Substring($publishDirectory.Length + 1).Replace('\', '/'))" }
 $checksums | Set-Content -LiteralPath (Join-Path $publishDirectory "SHA256SUMS.txt") -Encoding utf8
 
-if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive -Force }
 & tar.exe -a -c -f $archive -C $publishDirectory .
 if ($LASTEXITCODE -ne 0) { throw "archive creation failed." }
+$archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+"$archiveHash  $([IO.Path]::GetFileName($archive))" | Set-Content -LiteralPath (Join-Path $managerRoot "artifacts\SHA256SUMS-v.1.0.3.txt") -Encoding utf8
 Write-Host "Published: $publishDirectory"
 Write-Host "Archive:   $archive"
