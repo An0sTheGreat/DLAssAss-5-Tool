@@ -19,7 +19,7 @@ The resolution-cost algorithms were adapted from
 
 ## MinHook
 
-The experimental DX11 bridge uses
+The experimental DX11 bridge and the native-SR duplicate-return guard use
 [MinHook](https://github.com/TsudaKageyu/minhook), copyright © 2009–2017 Tsuda
 Kageyu and other credited contributors. Its BSD-style license is retained in
 `licenses/MinHook.txt` and is also included with binary releases.

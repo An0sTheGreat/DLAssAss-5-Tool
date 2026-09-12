@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 $managerRoot = Split-Path -Parent $PSScriptRoot
 $sourceAddon = Join-Path $managerRoot "Payload\renodx-dlss5-super-anus.addon64"
-$expectedAddonHash = "6121E0F743E2092B1965DC03257DCF0A452F6405CA6AE0CE287CC36149433838"
+$expectedAddonHash = "4213C8D2C820891448A33225C6E1EA592F760194FFFE5A5C167FC2C3CD54B9FD"
 $publishDirectory = Join-Path $managerRoot "artifacts\publish"
 $archive = Join-Path $managerRoot "artifacts\DLAssAss-5-Tool-$Runtime.zip"
 $fullManagerRoot = [IO.Path]::GetFullPath($managerRoot) + [IO.Path]::DirectorySeparatorChar
@@ -37,12 +37,19 @@ New-Item -ItemType Directory -Path $payloadDirectory, $dlssDirectory -Force | Ou
 Copy-Item -LiteralPath $sourceAddon -Destination (Join-Path $payloadDirectory ([IO.Path]::GetFileName($sourceAddon))) -Force
 Copy-Item -LiteralPath (Join-Path $managerRoot "DLSS Files\README.md") -Destination $dlssDirectory -Force
 Copy-Item -LiteralPath (Join-Path $managerRoot "README.md") -Destination $publishDirectory -Force
+foreach ($document in @("CHANGELOG.md", "VERSION", "THIRD_PARTY_NOTICES.md")) {
+    Copy-Item -LiteralPath (Join-Path $managerRoot $document) -Destination $publishDirectory
+}
+Copy-Item -LiteralPath (Join-Path $managerRoot "licenses") -Destination $publishDirectory -Recurse
+Copy-Item -LiteralPath (Join-Path $managerRoot "docs") -Destination $publishDirectory -Recurse
+New-Item -ItemType Directory -Path (Join-Path $publishDirectory "assets") -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $managerRoot "assets\compatibility-experimental.svg") -Destination (Join-Path $publishDirectory "assets")
 if (Get-ChildItem -LiteralPath $dlssDirectory -Filter "*.dll" -File) { throw "Publish contains an NVIDIA DLL." }
 
 $checksums = @(
     Get-FileHash -LiteralPath (Join-Path $publishDirectory "DLAssAss 5 Tool.exe") -Algorithm SHA256
     Get-FileHash -LiteralPath (Join-Path $payloadDirectory ([IO.Path]::GetFileName($sourceAddon))) -Algorithm SHA256
-) | ForEach-Object { "$($_.Hash)  $([IO.Path]::GetFileName($_.Path))" }
+) | ForEach-Object { "$($_.Hash)  $($_.Path.Substring($publishDirectory.Length + 1).Replace('\', '/'))" }
 $checksums | Set-Content -LiteralPath (Join-Path $publishDirectory "SHA256SUMS.txt") -Encoding utf8
 
 if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive -Force }

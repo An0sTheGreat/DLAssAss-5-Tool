@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Current release: v.1.0.1**
+**Build version: v.1.0.2**
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
@@ -21,9 +21,39 @@ Neural Rendering support.
 | ❌ DirectX 9 | No | No native Neural Rendering backend. |
 | ❌ OpenGL | No | No native Neural Rendering backend. |
 
-API support does not guarantee correct results in every game. Continuous
-flickering has been reported in The Last of Us Part II with the current add-on
-and remains under investigation.
+API support does not guarantee correct results in every game. Version 1.0.2:
+**General frame-gen flickering fixes improved.** The included addon prevents
+duplicate NR processing through nested callbacks; this is not a universal
+Frame Generation compatibility guarantee.
+
+**Known issue:** BOTDW may freeze after alt-tabbing or leaving it unfocused,
+then toggling NR or changing settings. This remains unresolved; see the deferred
+[BOTDW Freeze Plan](docs/BOTDW_FREEZE_PLAN.md).
+
+## New addon controls in v.1.0.2
+
+- **Neural Detail and Colour:** Neural Transfer Strength, Neural Color Strength
+  and Neural Sharpness now work at all supported DX12 NR resolutions, including
+  100%. Transfer 100%, colour 100% and sharpness 0% retain the native first-pass
+  bypass at 100% resolution. Non-neutral settings use additional GPU working
+  textures/resolve work, with the existing memory and fence protections.
+- **Per-Pass Controls:** customize additional passes independently or leave them
+  inherited. Only enabled passes appear. Sections start expanded and remember
+  your collapsed/expanded choices across restarts, including temporarily hidden
+  passes. Per-pass hue-stable detail and colour coupling remain available.
+- Old global hue-stable detail/coupling values are ignored; saved explicit
+  per-pass values remain intact. Settings are stored per game in ReShade's
+  configuration, independently of the three original preset banks.
+- Debug, Runtime API, Links and About are the final four sections and start
+  collapsed. About shows the addon version and build date/time. Windows Details
+  shows addon file version **1.0.3.4** (manager version is **1.0.2**).
+
+These new image controls are DX12-only. Experimental DX11/Vulkan scope is unchanged.
+If safe working resources are unavailable, the addon retains native output.
+
+Upgrading the tool does not automatically update installed games. Close the game,
+select it in the tool, and choose **Install** to deploy the new bundled add-on.
+Existing libraries, settings, and backups retain their current storage location.
 
 The original standalone DLSS 5 Super Anus project is preserved on the
 [`DLSS-5-Super-Anus-Legacy`](../../tree/DLSS-5-Super-Anus-Legacy) branch.
