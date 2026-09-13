@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Version 1.0.3** — [Download the Windows release](../../releases/tag/v.1.0.3)
+**Version 1.0.4** — [Download the Windows release](../../releases/tag/v.1.0.4)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
@@ -65,7 +65,7 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   configuration, independently of the three original preset banks.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.0.3.12** (manager file version **1.0.3.0**).
+  shows addon file version **1.0.3.12** (manager file version **1.0.4.0**).
 
 These new image controls are DX12-only. Experimental DX11/Vulkan scope is unchanged.
 If safe working resources are unavailable, the addon retains native output.
@@ -73,9 +73,11 @@ If safe working resources are unavailable, the addon retains native output.
 Upgrading the tool does not automatically update installed games. Close the game,
 select it in the tool, and choose **Reinstall** to deploy the new bundled add-on.
 Existing libraries, settings, and backups retain their current storage location.
-**Reinstall ReShade** downloads the latest official full-addon build and uses
-Setup's update operation without shader packages. Existing ReShade proxy backups
-are kept beside their originals as `.dlss5manager-*.bak`; settings/presets are kept.
+**Install/Reinstall ReShade** offers ReShade Only, which uses Setup's automatic
+update operation without shader packages, or ReShade + Shaders, which opens the
+official Setup interface for shader and add-on package selection. Existing ReShade
+proxy backups are kept beside their originals as `.dlss5manager-*.bak`; settings
+and presets are kept.
 
 Compatible sequential passes share a scratch working set while keeping source
 views separate and fence-owned. Compact native-resolution controls can recover
@@ -88,7 +90,7 @@ on native fallback. The first pass now participates in complete-group transition
 tracking, allowing additional-pass controls to resume. Sharpening stays independent
 of transfer, and interrupted dependent history resets on managed recovery.
 
-See [v.1.0.3 release notes and validation](docs/MANAGER_1_0_3_RELEASE.md).
+See [v.1.0.4 release notes and validation](docs/MANAGER_1_0_4_RELEASE.md).
 These changes do not establish that Cyberpunk shimmer is fixed or guarantee
 correct output in every game. Experimental API support is unchanged.
 
@@ -105,8 +107,8 @@ The original standalone DLSS 5 Super Anus project is preserved on the
 - Graphics API detection using ReShade logs, executable imports, runtime files,
   executable names, and bounded binary evidence
 - Explicit API selection for games supporting multiple graphics APIs
-- Installation of the latest official ReShade build with add-on support and no
-  shader packages
+- Installation of the latest official ReShade build with add-on support, either
+  automatically without shaders or interactively with selected packages
 - One-click installation of the bundled add-on and validated user-supplied DLSS
   files
 - Per-game backups and one-click restoration of the latest installation
@@ -146,14 +148,15 @@ The tool does not download or redistribute NVIDIA DLLs.
 2. Select a game in Library View or Folder View.
 3. Review the detected executable, graphics API, ReShade state, add-on state,
    and available DLSS features.
-4. If ReShade is missing, select **Install ReShade**. For a multi-API game,
-   choose the API you intend to launch so the correct proxy DLL is installed.
+4. If ReShade is missing, select **Install ReShade**, choose ReShade Only or
+   ReShade + Shaders, then choose the intended API for a multi-API game.
 5. Select **Install** to install the included add-on and every validated DLSS
    DLL currently available in `DLSS Files` beside the selected game executable.
 6. Select **Play** to launch the detected game executable.
 
 ReShade installation uses the latest official full add-on build available from
-`reshade.me`, configures the selected API, and does not install shaders.
+`reshade.me` and configures the selected API. ReShade Only installs no shaders;
+ReShade + Shaders opens official Setup for package selection.
 
 ## Backups and restoration
 

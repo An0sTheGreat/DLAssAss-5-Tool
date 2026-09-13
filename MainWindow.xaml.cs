@@ -259,14 +259,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var game = SelectedGame;
         if (game?.ExecutablePath is null) { Show("The selected game does not have a usable executable."); return; }
         if (!game.CanInstallReShade) return;
+        const string reshadeOnly = "Install ReShade Only";
+        const string reshadeWithShaders = "Install ReShade + Shaders";
+        var choice = ThemedDialog.Choose(this, "Choose ReShade installation",
+            "Choose how ReShade should be installed. ReShade Only uses the current automatic setup. ReShade + Shaders opens the official ReShade Setup so you can select the shader and add-on packages you want.",
+            [reshadeOnly, reshadeWithShaders]);
+        if (choice is null) return;
+        var installMode = choice == reshadeOnly
+            ? ReShadeInstallMode.ReShadeOnly
+            : ReShadeInstallMode.InteractivePackages;
         var graphicsApi = SelectReShadeApi(game);
         if (graphicsApi is null) return;
         if (!ThemedDialog.Confirm(this, game.HasReShade ? "Reinstall ReShade" : "Install ReShade",
-            $"Download and {(game.HasReShade ? "reinstall" : "install")} the latest official ReShade build with full add-on support for {graphicsApi} into:\n\n{game.ExecutablePath}\n\nNo shaders will be downloaded. Existing settings and presets are kept. The full add-on build is intended for single-player use.",
+            $"Download and {(game.HasReShade ? "reinstall" : "install")} the latest official ReShade build with full add-on support for {graphicsApi} into:\n\n{game.ExecutablePath}\n\n{(installMode == ReShadeInstallMode.ReShadeOnly ? "No shaders will be downloaded." : "Official ReShade Setup will open so you can select shader and add-on packages before installation completes.")} Existing settings and presets are kept. The full add-on build is intended for single-player use.",
             MessageBoxImage.Warning)) return;
 
         Activity = "Checking the latest official ReShade release…";
-        var result = await _reshade.InstallLatestAsync(game, graphicsApi);
+        var result = await _reshade.InstallLatestAsync(game, graphicsApi, installMode);
         AppendLog(result.Message);
         Show(result.Message, result.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
         await RefreshGame(game);

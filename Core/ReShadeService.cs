@@ -15,7 +15,8 @@ public sealed class ReShadeService
 
     static ReShadeService() => Client.DefaultRequestHeaders.UserAgent.ParseAdd("DLAssAss5Tool/0.1");
 
-    public async Task<ReShadeInstallResult> InstallLatestAsync(GameEntry game, string graphicsApi)
+    public async Task<ReShadeInstallResult> InstallLatestAsync(
+        GameEntry game, string graphicsApi, ReShadeInstallMode installMode)
     {
         var executablePath = game.ExecutablePath;
         if (!File.Exists(executablePath) || !Path.GetExtension(executablePath).Equals(".exe", StringComparison.OrdinalIgnoreCase))
@@ -70,22 +71,20 @@ public sealed class ReShadeService
             }
 
             var start = new ProcessStartInfo(setupPath) { UseShellExecute = true, Verb = "runas" };
-            start.ArgumentList.Add(executablePath);
-            start.ArgumentList.Add("--headless");
-            start.ArgumentList.Add("--api");
-            start.ArgumentList.Add(api);
-            if (game.HasReShade)
-            {
-                start.ArgumentList.Add("--state");
-                start.ArgumentList.Add("update"); // Replaces binaries without installing shaders or removing presets.
-            }
+            foreach (var argument in InstallerArguments(executablePath, api, game.HasReShade, installMode))
+                start.ArgumentList.Add(argument);
             using var process = Process.Start(start) ?? throw new InvalidOperationException("ReShade Setup did not start.");
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
                 throw new InvalidOperationException($"ReShade Setup {release.Version} exited with code {process.ExitCode}.");
+            if (installMode == ReShadeInstallMode.InteractivePackages && !game.HasReShade &&
+                !InstallationPresent(executablePath, graphicsApi))
+                throw new OperationCanceledException("ReShade Setup closed without installing ReShade.");
             // Keep successful reinstall backups for manual recovery.
             proxyBackups.Clear();
-            return new(true, $"ReShade {release.Version} with full add-on support was installed for {graphicsApi} without shaders.");
+            return installMode == ReShadeInstallMode.ReShadeOnly
+                ? new(true, $"ReShade {release.Version} with full add-on support was installed for {graphicsApi} without shaders.")
+                : new(true, $"ReShade Setup {release.Version} completed for {graphicsApi} with your selected shader and add-on packages.");
         }
         catch (Exception ex)
         {
@@ -97,6 +96,26 @@ public sealed class ReShadeService
             if (setupPath is not null)
                 try { File.Delete(setupPath); } catch { }
         }
+    }
+
+    internal static IReadOnlyList<string> InstallerArguments(
+        string executablePath, string api, bool hasReShade, ReShadeInstallMode installMode)
+    {
+        var arguments = new List<string> { executablePath };
+        if (installMode == ReShadeInstallMode.ReShadeOnly) arguments.Add("--headless");
+        arguments.AddRange(["--api", api]);
+        if (hasReShade)
+            arguments.AddRange(["--state", installMode == ReShadeInstallMode.ReShadeOnly ? "update" : "modify"]);
+        return arguments;
+    }
+
+    private static bool InstallationPresent(string executablePath, string graphicsApi)
+    {
+        var directory = Path.GetDirectoryName(executablePath)!;
+        var proxy = ExpectedProxyName(graphicsApi);
+        return proxy is not null
+            ? IsReShadeModule(Path.Combine(directory, proxy))
+            : File.Exists(Path.Combine(directory, "ReShade.ini"));
     }
 
     internal static string? ResolveInstallerApi(string graphicsApi)
@@ -186,3 +205,4 @@ public sealed class ReShadeService
 
 public sealed record ReShadeRelease(Version Version, Uri DownloadUrl);
 public sealed record ReShadeInstallResult(bool Success, string Message);
+public enum ReShadeInstallMode { ReShadeOnly, InteractivePackages }

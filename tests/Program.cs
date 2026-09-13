@@ -51,6 +51,18 @@ try
     Require(ReShadeService.ResolveInstallerApi("DX12") == "dxgi", "DX12 must use the DXGI ReShade proxy.");
     Require(ReShadeService.ResolveInstallerApi("DX11") == "dxgi", "DX11 must use the DXGI ReShade proxy.");
     Require(ReShadeService.ResolveInstallerApi("DX9") == "d3d9", "DX9 ReShade mapping failed.");
+    Require(ReShadeService.InstallerArguments(executable, "dxgi", false, ReShadeInstallMode.ReShadeOnly)
+            .SequenceEqual([executable, "--headless", "--api", "dxgi"]),
+        "ReShade-only install arguments changed.");
+    Require(ReShadeService.InstallerArguments(executable, "dxgi", true, ReShadeInstallMode.ReShadeOnly)
+            .SequenceEqual([executable, "--headless", "--api", "dxgi", "--state", "update"]),
+        "ReShade-only reinstall must retain headless update mode.");
+    Require(ReShadeService.InstallerArguments(executable, "dxgi", false, ReShadeInstallMode.InteractivePackages)
+            .SequenceEqual([executable, "--api", "dxgi"]),
+        "Interactive install must show ReShade Setup.");
+    Require(ReShadeService.InstallerArguments(executable, "dxgi", true, ReShadeInstallMode.InteractivePackages)
+            .SequenceEqual([executable, "--api", "dxgi", "--state", "modify"]),
+        "Interactive reinstall must open package modification.");
     foreach (var api in new[] { "DX9", "DX11", "DX12", "OpenGL", "Vulkan", "DX12 / DX11" })
     {
         analysis.GraphicsApi = api;
@@ -92,7 +104,7 @@ try
         "Reinstall backup did not restore the previous add-on.");
     File.Delete(Path.Combine(installDirectory, "ReShade.ini"));
     Require(!service.Install(executable, dlss, true).Success, "Install proceeded without ReShade beside the executable.");
-    Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade API mapping, preferences, install, backup, and restore");
+    Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade install modes/API mapping, preferences, install, backup, and restore");
 }
 finally
 {

@@ -1,5 +1,11 @@
 # Changelog
 
+## [v.1.0.4] - 2026-09-12
+
+- Offer themed ReShade Only and ReShade + Shaders choices for install and
+  reinstall. The existing automatic path remains shader-free; the second opens
+  official ReShade Setup for interactive shader and add-on package selection.
+
 ## [v.1.0.3] - 2026-09-12
 
 - Fix pass-count changes leaving later passes on native fallback at 100% NR
