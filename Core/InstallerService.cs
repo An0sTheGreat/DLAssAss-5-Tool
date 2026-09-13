@@ -91,6 +91,15 @@ public sealed class InstallerService
         }
     }
 
+    public InstallResult UpdateAddon(string executablePath)
+    {
+        var gameDirectory = InstallDirectory(executablePath);
+        if (gameDirectory is null) return Fail("The selected game executable does not exist.");
+        if (!File.Exists(Path.Combine(gameDirectory, AddonName)))
+            return Fail("The add-on is not installed for this game; no files were changed.");
+        return Install(executablePath, "", false);
+    }
+
     public InstallResult RestoreLatest(string executablePath)
     {
         var gameDirectory = InstallDirectory(executablePath);

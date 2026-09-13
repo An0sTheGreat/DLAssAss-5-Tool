@@ -102,9 +102,32 @@ try
     Require(File.ReadAllText(Path.Combine(installDirectory, "ReShade.ini")) == "[GENERAL]", "Reinstall changed settings.");
     Require(service.RestoreLatest(executable).Success && File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "addon",
         "Reinstall backup did not restore the previous add-on.");
+    File.WriteAllText(Path.Combine(payload, InstallerService.AddonName), "bulk updated addon");
+    File.WriteAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll"), "user changed");
+    Require(service.UpdateAddon(executable).Success, "Add-on-only update failed.");
+    Require(File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "bulk updated addon",
+        "Add-on-only update did not replace the installed add-on.");
+    Require(File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == "user changed" &&
+        File.ReadAllText(Path.Combine(installDirectory, "ReShade.ini")) == "[GENERAL]",
+        "Add-on-only update changed DLSS or ReShade settings.");
+    Require(service.RestoreLatest(executable).Success &&
+        File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "addon",
+        "Add-on-only update backup did not restore the previous add-on.");
+    File.Delete(Path.Combine(installDirectory, InstallerService.AddonName));
+    var backupsBeforeSkippedUpdate = Directory.EnumerateDirectories(backups, "*", SearchOption.AllDirectories).Count();
+    Require(!service.UpdateAddon(executable).Success &&
+        !File.Exists(Path.Combine(installDirectory, InstallerService.AddonName)),
+        "Add-on-only update touched a game without the add-on installed.");
+    Require(Directory.EnumerateDirectories(backups, "*", SearchOption.AllDirectories).Count() == backupsBeforeSkippedUpdate,
+        "Skipped add-on update created a backup or changed state.");
     File.Delete(Path.Combine(installDirectory, "ReShade.ini"));
     Require(!service.Install(executable, dlss, true).Success, "Install proceeded without ReShade beside the executable.");
-    Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade install modes/API mapping, preferences, install, backup, and restore");
+    var mainWindow = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "MainWindow.xaml"));
+    Require(mainWindow.Contains("Content=\"UPDATE ALL\"") &&
+        mainWindow.IndexOf("game(s) detected", StringComparison.Ordinal) <
+        mainWindow.IndexOf("Content=\"UPDATE ALL\"", StringComparison.Ordinal),
+        "Update All is not positioned after the detected-game count.");
+    Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade modes, preferences, install, addon-only update/refusal, backup, and restore");
 }
 finally
 {

@@ -110,6 +110,9 @@
                                     <TextBlock Text="{Binding Games.Count, StringFormat={} - {0} game(s) detected}"
                                                Foreground="{StaticResource MutedBrush}" FontSize="13"
                                                VerticalAlignment="Bottom" Margin="6,0,0,2" />
+                                    <Button x:Name="UpdateAllButton" Content="UPDATE ALL" Click="UpdateAll_Click"
+                                            Padding="10,4" Margin="12,0,0,0" FontSize="11"
+                                            VerticalAlignment="Center" />
                                 </StackPanel>
                                 <TextBlock Text="Select a row to install or restore files" Foreground="{StaticResource MutedBrush}"
                                            VerticalAlignment="Bottom" HorizontalAlignment="Right" />

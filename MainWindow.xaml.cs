@@ -254,6 +254,68 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             DlssFilesDirectory, true));
     }
 
+    private async void UpdateAll_Click(object sender, RoutedEventArgs e)
+    {
+        var targets = Games
+            .Where(game => game.HasAddon && game.ExecutablePath is not null)
+            .Select(game => (Game: game, Directory: InstallerService.InstallDirectory(game.ExecutablePath)))
+            .Where(target => target.Directory is not null)
+            .GroupBy(target => target.Directory!, DirectoryPath.Comparer)
+            .Select(group => group.First().Game)
+            .ToArray();
+        if (targets.Length == 0)
+        {
+            Show("No detected games currently have the add-on installed.");
+            return;
+        }
+        if (!ThemedDialog.Confirm(this, "Update all installed add-ons",
+            $"Update the add-on in {targets.Length} detected game installation(s)?\n\nOnly {InstallerService.AddonName} will be replaced. ReShade, DLSS files, settings and games without the add-on will not be changed. Existing add-ons are backed up.")) return;
+
+        var selectedDirectory = SelectedGame?.GameDirectory;
+        var updated = 0;
+        var skipped = 0;
+        var failures = new List<string>();
+        UpdateAllButton.IsEnabled = false;
+        try
+        {
+            for (var index = 0; index < targets.Length; ++index)
+            {
+                var game = targets[index];
+                var directory = InstallerService.InstallDirectory(game.ExecutablePath);
+                if (directory is null || !File.Exists(Path.Combine(directory, InstallerService.AddonName)))
+                {
+                    ++skipped;
+                    AppendLog($"Update All skipped {game.Name}: add-on is no longer installed.");
+                    continue;
+                }
+
+                Activity = $"Updating add-on {index + 1}/{targets.Length}: {game.Name}…";
+                InstallResult result;
+                try { result = await Task.Run(() => _installer.UpdateAddon(game.ExecutablePath!)); }
+                catch (Exception exception)
+                {
+                    failures.Add($"{game.Name}: {exception.Message}");
+                    AppendLog($"Update All failed {game.Name}: {exception.Message}");
+                    continue;
+                }
+                AppendLog($"Update All {game.Name}: {result.Message}");
+                if (result.Success) ++updated;
+                else failures.Add($"{game.Name}: {result.Message}");
+            }
+
+            await RefreshKnownGames(selectedDirectory);
+            var summary = $"Update All complete. Updated: {updated}. Skipped: {skipped}. Failed: {failures.Count}.";
+            if (failures.Count != 0) summary += $"\n\n{string.Join("\n", failures)}";
+            AppendLog(summary.Replace('\n', ' '));
+            Show(summary, failures.Count == 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+        }
+        finally
+        {
+            UpdateAllButton.IsEnabled = true;
+            if (Activity != "Ready") Activity = "Ready";
+        }
+    }
+
     private async void InstallReShade_Click(object sender, RoutedEventArgs e)
     {
         var game = SelectedGame;

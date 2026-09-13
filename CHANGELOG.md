@@ -1,5 +1,19 @@
 # Changelog
 
+## [v.1.0.5] - 2026-09-12
+
+- Add a themed **UPDATE ALL** button beside the detected-game count. It updates
+  only installations where the addon is already present, deduplicates shared
+  destinations, backs up each previous addon and reports partial failures.
+- Bulk update never installs into an unmodded game and does not change ReShade,
+  NVIDIA DLSS files, settings or presets.
+- Add a persistent in-game Multipass Motion selector below Hook Method. Reuse
+  Game Motion is the recommended default; legacy zero motion and diagnostic
+  zero-motion/reset behavior remain selectable.
+- Reset pass history safely after changing the motion mode. User testing reports
+  major ghosting/haloing improvements in BOTDW, TLOU2 and Cyberpunk. Cyberpunk's
+  separate two-pass shadow shimmer remains unresolved.
+
 ## [v.1.0.4] - 2026-09-12
 
 - Offer themed ReShade Only and ReShade + Shaders choices for install and
