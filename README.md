@@ -6,6 +6,19 @@ DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
 installing ReShade with add-on support, and safely restoring replaced files.
 
+## Supported GPUs
+
+| GPU family | Status | Neural Rendering requirement |
+| --- | --- | --- |
+| ✅ GeForce RTX 50 Series | Supported | Official DLSS 5 Neural Rendering hardware. Supply a compatible `nvngx_dlssnr.dll`. |
+| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 40 Series | Experimental | Requires the community-patched `nvngx_dlssnr.dll` available from the RenoDX Discord server. |
+| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 30 Series | Experimental | Requires the community-patched `nvngx_dlssnr.dll` available from the RenoDX Discord server. |
+
+The RTX 30/40 runtime patch is unofficial, is not bundled or downloaded by this
+project, and cannot guarantee compatibility with every game, driver or GPU.
+These statuses apply to DLSS 5 Neural Rendering; other DLSS features have their
+own hardware requirements.
+
 ## Current graphics API compatibility
 
 These statuses describe Neural Rendering in the included add-on. The manager
