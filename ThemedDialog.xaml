@@ -45,6 +45,20 @@
                     <TextBox x:Name="InputTextBox" Visibility="Collapsed" Margin="0,16,0,0"
                              FontSize="13" MaxLength="120" />
                     <WrapPanel x:Name="ChoicePanel" Visibility="Collapsed" Margin="0,16,0,0" />
+                    <Expander x:Name="DetailsExpander" Header="View details" Visibility="Collapsed"
+                              Foreground="#E7EAF0" Margin="0,16,0,0">
+                        <Border Background="#11151B" BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Text="To view installed directories, select the &quot;SETTINGS &amp; LOG&quot; tab."
+                                           Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                           Margin="0,0,0,10" />
+                                <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                                    <StackPanel x:Name="DetailsPanel" />
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+                    </Expander>
                 </StackPanel>
             </Grid>
 

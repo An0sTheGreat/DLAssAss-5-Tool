@@ -32,6 +32,18 @@ public partial class ThemedDialog : Window
         MessageBoxImage icon = MessageBoxImage.Information) =>
         new ThemedDialog(owner, title, message, icon).ShowDialog();
 
+    public static void ShowDetails(Window owner, string title, string message,
+        IReadOnlyList<string> updated, IReadOnlyList<string> skipped, IReadOnlyList<string> failed,
+        MessageBoxImage icon = MessageBoxImage.Information)
+    {
+        var dialog = new ThemedDialog(owner, title, message, icon);
+        dialog.DetailsExpander.Visibility = Visibility.Visible;
+        dialog.AddDetailsGroup("Updated", updated, "#A7E66B");
+        dialog.AddDetailsGroup("Skipped", skipped, "#F2B84B");
+        dialog.AddDetailsGroup("Failed", failed, "#FF8A8E");
+        dialog.ShowDialog();
+    }
+
     public static bool Confirm(Window owner, string title, string message,
         MessageBoxImage icon = MessageBoxImage.Question)
     {
@@ -82,6 +94,24 @@ public partial class ThemedDialog : Window
     {
         _value = InputTextBox.Visibility == Visibility.Visible ? InputTextBox.Text : null;
         DialogResult = true;
+    }
+
+    private void AddDetailsGroup(string heading, IReadOnlyList<string> items, string color)
+    {
+        DetailsPanel.Children.Add(new TextBlock
+        {
+            Text = $"{heading} ({items.Count})",
+            Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color)),
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, DetailsPanel.Children.Count == 0 ? 0 : 12, 0, 4)
+        });
+        DetailsPanel.Children.Add(new TextBlock
+        {
+            Text = items.Count == 0 ? "None" : string.Join(Environment.NewLine, items.Select(item => "• " + item)),
+            Foreground = (Brush)Application.Current.Resources["MutedBrush"],
+            TextWrapping = TextWrapping.Wrap,
+            LineHeight = 18
+        });
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;

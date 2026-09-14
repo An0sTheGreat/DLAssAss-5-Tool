@@ -197,7 +197,7 @@
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border x:Name="Tile" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6" SnapsToDevicePixels="True">
+                                CornerRadius="10" SnapsToDevicePixels="True">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>

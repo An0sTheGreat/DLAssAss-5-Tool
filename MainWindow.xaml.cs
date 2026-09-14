@@ -30,6 +30,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private bool _isLibraryView;
     private bool _showHiddenGames;
     private bool _hasHiddenGames;
+    private bool _isLoadingOverlayVisible = true;
+    private string _loadingOverlayText = "Analyzing Games...";
     private string? _sortProperty;
     private ListSortDirection _sortDirection = ListSortDirection.Ascending;
 
@@ -45,6 +47,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public bool IsLibraryView { get => _isLibraryView; set => Set(ref _isLibraryView, value); }
     public bool ShowHiddenGames { get => _showHiddenGames; set => Set(ref _showHiddenGames, value); }
     public bool HasHiddenGames { get => _hasHiddenGames; set => Set(ref _hasHiddenGames, value); }
+    public bool IsLoadingOverlayVisible { get => _isLoadingOverlayVisible; set => Set(ref _isLoadingOverlayVisible, value); }
+    public string LoadingOverlayText { get => _loadingOverlayText; set => Set(ref _loadingOverlayText, value); }
+    public bool HasMultipleAddonInstallations => GetUpdateAllTargets().Length > 1;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -53,6 +58,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _settings = _store.Load();
         _isLibraryView = _settings.IsLibraryView;
         InitializeComponent();
+        RestoreWindowPlacement();
         _dlssFilesDirectory = _settings.DlssFilesDirectory
             ?? Path.Combine(AppContext.BaseDirectory, "DLSS Files");
         Directory.CreateDirectory(_dlssFilesDirectory);
@@ -67,8 +73,52 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        RefreshDlssStatus();
-        await RefreshKnownGames();
+        ShowLoadingOverlay("Analyzing Games...");
+        try
+        {
+            RefreshDlssStatus();
+            await RefreshKnownGames(analysisCompleted: () => IsLoadingOverlayVisible = false);
+        }
+        finally { IsLoadingOverlayVisible = false; }
+    }
+
+    private void RestoreWindowPlacement()
+    {
+        if (_settings.WindowLeft is not { } left || _settings.WindowTop is not { } top ||
+            _settings.WindowWidth is not { } width || _settings.WindowHeight is not { } height ||
+            !double.IsFinite(left) || !double.IsFinite(top) ||
+            !double.IsFinite(width) || !double.IsFinite(height)) return;
+
+        width = Math.Clamp(width, MinWidth, Math.Max(MinWidth, SystemParameters.VirtualScreenWidth));
+        height = Math.Clamp(height, MinHeight, Math.Max(MinHeight, SystemParameters.VirtualScreenHeight));
+        left = Math.Clamp(left, SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenLeft + Math.Max(0, SystemParameters.VirtualScreenWidth - width));
+        top = Math.Clamp(top, SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenTop + Math.Max(0, SystemParameters.VirtualScreenHeight - height));
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        Left = left;
+        Top = top;
+        Width = width;
+        Height = height;
+        if (_settings.WindowMaximized) WindowState = WindowState.Maximized;
+    }
+
+    private void Window_Closing(object? sender, CancelEventArgs e)
+    {
+        var bounds = WindowState == WindowState.Normal
+            ? new Rect(Left, Top, ActualWidth, ActualHeight)
+            : RestoreBounds;
+        if (double.IsFinite(bounds.Left) && double.IsFinite(bounds.Top) &&
+            double.IsFinite(bounds.Width) && double.IsFinite(bounds.Height) &&
+            bounds.Width >= MinWidth && bounds.Height >= MinHeight)
+        {
+            _settings.WindowLeft = bounds.Left;
+            _settings.WindowTop = bounds.Top;
+            _settings.WindowWidth = bounds.Width;
+            _settings.WindowHeight = bounds.Height;
+        }
+        _settings.WindowMaximized = WindowState == WindowState.Maximized;
+        _store.Save(_settings);
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -140,11 +190,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void Refresh_Click(object sender, RoutedEventArgs e)
     {
-        RefreshDlssStatus();
-        await RefreshKnownGames(SelectedGame?.GameDirectory);
+        ShowLoadingOverlay("Analyzing Games...");
+        try
+        {
+            RefreshDlssStatus();
+            await RefreshKnownGames(SelectedGame?.GameDirectory,
+                () => IsLoadingOverlayVisible = false);
+        }
+        finally { IsLoadingOverlayVisible = false; }
     }
 
-    private async Task RefreshKnownGames(string? selectDirectory = null)
+    private async Task RefreshKnownGames(string? selectDirectory = null, Action? analysisCompleted = null)
     {
         var directories = DirectoryPath.NormalizeDistinct(_settings.GameDirectories.Where(Directory.Exists));
         _settings.GameDirectories = directories;
@@ -159,19 +215,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         Games.Clear();
         foreach (var entry in entries.OrderBy(game => game.Name, StringComparer.OrdinalIgnoreCase)) Games.Add(entry);
+        Notify(nameof(HasMultipleAddonInstallations));
         ApplyGameFilter();
         var view = CollectionViewSource.GetDefaultView(Games);
         var requested = Games.FirstOrDefault(game => string.Equals(game.GameDirectory,
             selectDirectory, StringComparison.OrdinalIgnoreCase));
         SelectedGame = requested is not null && view.Contains(requested) ? requested : FirstVisibleGame();
         Activity = "Loading cover art…";
-        await Task.WhenAll(entries.Select(LoadCoverAsync));
+        var coverLoading = Task.WhenAll(entries.Select(LoadCoverAsync));
+        analysisCompleted?.Invoke();
+        await coverLoading;
         Activity = "Ready";
     }
 
     private async Task LoadCoverAsync(GameEntry game)
     {
-        try { game.CoverSource = await _coverArt.LoadAsync(game); }
+        _settings.CustomArtworkPaths.TryGetValue(game.GameDirectory, out var customPath);
+        try { game.CoverSource = await _coverArt.LoadAsync(game, customPath); }
         finally { game.IsCoverLoading = false; }
     }
 
@@ -189,6 +249,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         refreshed.CoverSource = game.CoverSource;
         var index = Games.IndexOf(game);
         if (index >= 0) Games[index] = refreshed;
+        Notify(nameof(HasMultipleAddonInstallations));
         ApplyGameFilter();
         SelectedGame = refreshed;
         Activity = "Ready";
@@ -226,6 +287,34 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AppendLog($"Renamed game to: {name}");
     }
 
+    private async void ChangeArtwork_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { CommandParameter: GameEntry game }) return;
+        var picker = new OpenFileDialog
+        {
+            Title = $"Choose artwork for {game.Name}",
+            Filter = "Image files|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tif;*.tiff|All files|*.*",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        if (picker.ShowDialog(this) != true) return;
+
+        game.IsCoverLoading = true;
+        try
+        {
+            var artwork = await _coverArt.ImportCustomAsync(game.GameDirectory, picker.FileName);
+            _settings.CustomArtworkPaths[game.GameDirectory] = artwork.Path;
+            _store.Save(_settings);
+            game.CoverSource = artwork.Image;
+            AppendLog($"Changed artwork for {game.Name}.");
+        }
+        catch (Exception exception)
+        {
+            Show($"The selected artwork could not be used.\n\n{exception.Message}", MessageBoxImage.Error);
+        }
+        finally { game.IsCoverLoading = false; }
+    }
+
     private void ApplyGameFilter()
     {
         HasHiddenGames = Games.Any(game => game.IsHidden);
@@ -256,13 +345,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void UpdateAll_Click(object sender, RoutedEventArgs e)
     {
-        var targets = Games
-            .Where(game => game.HasAddon && game.ExecutablePath is not null)
-            .Select(game => (Game: game, Directory: InstallerService.InstallDirectory(game.ExecutablePath)))
-            .Where(target => target.Directory is not null)
-            .GroupBy(target => target.Directory!, DirectoryPath.Comparer)
-            .Select(group => group.First().Game)
-            .ToArray();
+        var targets = GetUpdateAllTargets();
         if (targets.Length == 0)
         {
             Show("No detected games currently have the add-on installed.");
@@ -272,10 +355,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             $"Update the add-on in {targets.Length} detected game installation(s)?\n\nOnly {InstallerService.AddonName} will be replaced. ReShade, DLSS files, settings and games without the add-on will not be changed. Existing add-ons are backed up.")) return;
 
         var selectedDirectory = SelectedGame?.GameDirectory;
-        var updated = 0;
-        var skipped = 0;
+        var updated = new List<string>();
+        var skipped = new List<string>();
         var failures = new List<string>();
         UpdateAllButton.IsEnabled = false;
+        ShowLoadingOverlay("Updating Selected Games...");
         try
         {
             for (var index = 0; index < targets.Length; ++index)
@@ -284,8 +368,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 var directory = InstallerService.InstallDirectory(game.ExecutablePath);
                 if (directory is null || !File.Exists(Path.Combine(directory, InstallerService.AddonName)))
                 {
-                    ++skipped;
-                    AppendLog($"Update All skipped {game.Name}: add-on is no longer installed.");
+                    var reason = $"{game.Name}: add-on is no longer installed.";
+                    skipped.Add(reason);
+                    AppendLog($"Update All skipped {reason}");
                     continue;
                 }
 
@@ -299,22 +384,34 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     continue;
                 }
                 AppendLog($"Update All {game.Name}: {result.Message}");
-                if (result.Success) ++updated;
+                if (result.Success) updated.Add($"{game.Name}: Installed 1 file(s)");
                 else failures.Add($"{game.Name}: {result.Message}");
             }
 
-            await RefreshKnownGames(selectedDirectory);
-            var summary = $"Update All complete. Updated: {updated}. Skipped: {skipped}. Failed: {failures.Count}.";
-            if (failures.Count != 0) summary += $"\n\n{string.Join("\n", failures)}";
-            AppendLog(summary.Replace('\n', ' '));
-            Show(summary, failures.Count == 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            var summary = $"Update All complete. Updated: {updated.Count}. Skipped: {skipped.Count}. Failed: {failures.Count}.";
+            AppendLog(summary);
+            await RefreshKnownGames(selectedDirectory, () =>
+            {
+                IsLoadingOverlayVisible = false;
+                ThemedDialog.ShowDetails(this, "DLAssAss 5 Tool", summary, updated, skipped, failures,
+                    failures.Count == 0 ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            });
         }
         finally
         {
+            IsLoadingOverlayVisible = false;
             UpdateAllButton.IsEnabled = true;
             if (Activity != "Ready") Activity = "Ready";
         }
     }
+
+    private GameEntry[] GetUpdateAllTargets() => Games
+            .Where(game => game.HasAddon && game.ExecutablePath is not null)
+            .Select(game => (Game: game, Directory: InstallerService.InstallDirectory(game.ExecutablePath)))
+            .Where(target => target.Directory is not null)
+            .GroupBy(target => target.Directory!, DirectoryPath.Comparer)
+            .Select(group => group.First().Game)
+            .ToArray();
 
     private async void InstallReShade_Click(object sender, RoutedEventArgs e)
     {
@@ -465,12 +562,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void Show(string message, MessageBoxImage image = MessageBoxImage.Information) =>
         ThemedDialog.Show(this, "DLAssAss 5 Tool", message, image);
 
+    private void ShowLoadingOverlay(string text)
+    {
+        LoadingOverlayText = text;
+        IsLoadingOverlayVisible = true;
+    }
+
     private void Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return;
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
+
+    private void Notify(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
 public sealed record DlssFileStatus(string Name, bool Exists)

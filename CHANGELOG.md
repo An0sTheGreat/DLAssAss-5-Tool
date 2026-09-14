@@ -1,5 +1,20 @@
 # Changelog
 
+## [v.1.0.7] - 2026-09-13
+
+- Remember the last restored window size and position, including when closing
+  maximized, and keep restored placement within the available desktop.
+- Add managed per-game custom artwork from the library context menu and round
+  game covers and major interface sections consistently.
+- Highlight **UPDATE ALL** when multiple detected installations are eligible.
+  Its themed completion dialog now expands into matching Updated, Skipped and
+  Failed bullet lists while full install paths remain in **SETTINGS & LOG**.
+- Pulse the complete **PLAY** button between green and gray when ReShade and the
+  addon are installed. Fix the preview crash caused by animating an immutable
+  WPF brush and reset the green layer when selection eligibility changes.
+- Show a dark themed loading overlay while launch/refresh analysis or Update All
+  is active. Analysis overlays dismiss before asynchronous cover downloads.
+
 ## [v.1.0.6] - 2026-09-13
 
 - Default every unsaved Pass 1 and additional-pass Neural Color Strength slider

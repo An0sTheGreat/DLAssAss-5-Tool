@@ -1,4 +1,6 @@
 using DLSS5ManAger.Core;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 PlayPulseTest.Run();
 
@@ -75,19 +77,40 @@ try
         "Multi-API games must require an explicit supported API selection.");
 
     var store = new AppStore(Path.Combine(root, "Store"));
+    var customArt = Path.Combine(root, "custom-art.png");
+    var encoder = new PngBitmapEncoder();
+    encoder.Frames.Add(BitmapFrame.Create(BitmapSource.Create(1, 1, 96, 96, PixelFormats.Bgra32,
+        null, new byte[] { 0x00, 0xB9, 0x76, 0xFF }, 4)));
+    using (var stream = File.Create(customArt)) encoder.Save(stream);
+    var coverArt = new CoverArtService(Path.Combine(store.DataDirectory, "Covers"));
+    var importedArt = coverArt.ImportCustomAsync(game, customArt).GetAwaiter().GetResult();
+    Require(File.Exists(importedArt.Path) && importedArt.Image is not null,
+        "Custom artwork was not validated and copied into managed storage.");
+    Require(coverArt.LoadAsync(analysis, importedArt.Path).GetAwaiter().GetResult() is not null,
+        "Persisted custom artwork was not loaded before remote artwork lookup.");
     store.Save(new ManagerSettings
     {
         GameDirectories = [game, game.ToLowerInvariant().Replace('\\', '/')],
         HiddenGameDirectories = [game, game.ToLowerInvariant().Replace('\\', '/')],
         CustomGameNames = new(DirectoryPath.Comparer) { [game.ToLowerInvariant().Replace('\\', '/')] = "Renamed Game" },
-        IsLibraryView = false
+        CustomArtworkPaths = new(DirectoryPath.Comparer) { [game.ToLowerInvariant().Replace('\\', '/')] = importedArt.Path },
+        IsLibraryView = false,
+        WindowLeft = 140,
+        WindowTop = 90,
+        WindowWidth = 1080,
+        WindowHeight = 720,
+        WindowMaximized = true
     });
     var loaded = store.Load();
     Require(loaded.GameDirectories.Count == 1, "Persisted game paths were not deduplicated.");
     Require(loaded.HiddenGameDirectories.Count == 1, "Hidden game paths were not deduplicated.");
     Require(loaded.CustomGameNames.TryGetValue(game, out var customName) && customName == "Renamed Game",
         "Custom game name was not normalized and persisted.");
+    Require(loaded.CustomArtworkPaths.TryGetValue(game, out var artworkPath) && artworkPath == importedArt.Path,
+        "Custom artwork path was not normalized and persisted.");
     Require(!loaded.IsLibraryView, "View preference was not persisted.");
+    Require(loaded.WindowLeft == 140 && loaded.WindowTop == 90 && loaded.WindowWidth == 1080 &&
+        loaded.WindowHeight == 720 && loaded.WindowMaximized, "Window placement was not persisted.");
     Require(service.Install(executable, dlss, true).Success, "Install failed.");
     Require(File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == "replacement", "DLSS replacement failed.");
     Require(File.Exists(Path.Combine(installDirectory, InstallerService.AddonName)), "Add-on was not installed beside the executable.");
@@ -127,6 +150,19 @@ try
         mainWindow.IndexOf("game(s) detected", StringComparison.Ordinal) <
         mainWindow.IndexOf("Content=\"UPDATE ALL\"", StringComparison.Ordinal),
         "Update All is not positioned after the detected-game count.");
+    Require(mainWindow.Contains("HasMultipleAddonInstallations") && mainWindow.Contains("ChangeArtwork_Click") &&
+        mainWindow.Contains("IsLoadingOverlayVisible") && mainWindow.Contains("LoadingOverlayText") &&
+        mainWindow.Contains("CornerRadius=\"10\"") &&
+        mainWindow.Contains("PlayReadyPulse"), "New library UI states are missing from the window markup.");
+    var dialog = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "ThemedDialog.xaml"));
+    Require(dialog.Contains("Header=\"View details\"") && dialog.Contains("DetailsPanel") &&
+        dialog.Contains("To view installed directories"),
+        "Update All detail expander is missing from the themed dialog.");
+    var mainWindowCode = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "MainWindow.xaml.cs"));
+    Require(mainWindowCode.Contains("Analyzing Games...") &&
+        mainWindowCode.Contains("Updating Selected Games...") &&
+        mainWindowCode.Contains("Installed 1 file(s)"),
+        "Operation overlay text or concise update result text is missing.");
     Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade modes, preferences, install, addon-only update/refusal, backup, and restore");
 }
 finally

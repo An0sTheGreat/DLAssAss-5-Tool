@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Version 1.0.6** — [Download the Windows release](../../releases/tag/v.1.0.6)
+**Version 1.0.7** — [Download the Windows release](../../releases/tag/v.1.0.7)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
@@ -73,7 +73,7 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   Rendering Resolution stages 100% and still requires **Apply**.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.0.6.17** (manager file version **1.0.6.0**).
+  shows addon file version **1.0.6.17** (manager file version **1.0.7.0**).
 
 These new image controls are DX12-only. Experimental DX11/Vulkan scope is unchanged.
 If safe working resources are unavailable, the addon retains native output.
@@ -98,12 +98,12 @@ on native fallback. The first pass now participates in complete-group transition
 tracking, allowing additional-pass controls to resume. Sharpening stays independent
 of transfer, and interrupted dependent history resets on managed recovery.
 
-See [v.1.0.6 release notes and validation](docs/MANAGER_1_0_6_RELEASE.md).
+See [v.1.0.7 release notes and validation](docs/MANAGER_1_0_7_RELEASE.md).
 These changes do not establish that Cyberpunk shimmer is fixed or guarantee
 correct output in every game. Experimental API support is unchanged.
 
-PLAY has a soft green pulsing border only when the selected game has both ReShade
-and the add-on installed. The border disappears otherwise; launching is unchanged.
+PLAY pulses fully between green and gray only when the selected game has both
+ReShade and the add-on installed. It returns to gray otherwise; launching is unchanged.
 
 The original standalone DLSS 5 Super Anus project is preserved on the
 [`DLSS-5-Super-Anus-Legacy`](../../tree/DLSS-5-Super-Anus-Legacy) branch.
@@ -112,6 +112,8 @@ The original standalone DLSS 5 Super Anus project is preserved on the
 
 - One-click **UPDATE ALL** for detected games that already have the addon;
   ReShade, DLSS files, settings and unmodded games remain untouched
+- Expandable **UPDATE ALL** results grouped into updated, skipped and failed games
+- Persistent window placement and per-game custom library artwork
 - Steam discovery and recursive scanning of user-selected drives or folders
 - Steam-style cover library and sortable Explorer-style table views
 - Graphics API detection using ReShade logs, executable imports, runtime files,

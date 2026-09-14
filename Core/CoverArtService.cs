@@ -22,8 +22,12 @@ public sealed class CoverArtService
         Directory.CreateDirectory(cacheDirectory);
     }
 
-    public async Task<ImageSource?> LoadAsync(GameEntry game)
+    public async Task<ImageSource?> LoadAsync(GameEntry game, string? customPath = null)
     {
+        if (!string.IsNullOrWhiteSpace(customPath) && File.Exists(customPath))
+            try { return Decode(await File.ReadAllBytesAsync(customPath)); }
+            catch { }
+
         await Requests.WaitAsync();
         try
         {
@@ -54,6 +58,33 @@ public sealed class CoverArtService
         catch { }
         finally { Requests.Release(); }
         return null;
+    }
+
+    public async Task<(string Path, ImageSource Image)> ImportCustomAsync(string gameDirectory, string sourcePath)
+    {
+        var file = new FileInfo(sourcePath);
+        if (!file.Exists || file.Length == 0 || file.Length > 50 * 1024 * 1024)
+            throw new InvalidDataException("Artwork must be a valid image no larger than 50 MB.");
+
+        var bytes = await File.ReadAllBytesAsync(file.FullName);
+        var image = Decode(bytes);
+        var key = Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(DirectoryPath.Normalize(gameDirectory).ToUpperInvariant())))[..16];
+        var destination = Path.Combine(_cacheDirectory, $"custom-{key}.img");
+        if (!Path.GetFullPath(sourcePath).Equals(Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+        {
+            var temporary = destination + ".tmp";
+            try
+            {
+                await File.WriteAllBytesAsync(temporary, bytes);
+                File.Move(temporary, destination, true);
+            }
+            finally
+            {
+                if (File.Exists(temporary)) File.Delete(temporary);
+            }
+        }
+        return (destination, image);
     }
 
     internal static string NormalizeTitle(string title) =>

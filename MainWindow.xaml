@@ -5,7 +5,8 @@
         Title="DLAssAss 5 Tool" Height="760" Width="1220" MinHeight="620" MinWidth="980"
         Icon="assets/icon_dark.ico"
         WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize"
-        Background="{StaticResource WindowBrush}" Loaded="OnLoaded" StateChanged="Window_StateChanged">
+        Background="{StaticResource WindowBrush}" Loaded="OnLoaded" StateChanged="Window_StateChanged"
+        Closing="Window_Closing">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="7" GlassFrameThickness="0"
                             CornerRadius="0" UseAeroCaptionButtons="False" />
@@ -15,6 +16,7 @@
         <ContextMenu x:Key="GameContextMenu" x:Shared="False"
                      DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
             <MenuItem Header="Rename game" CommandParameter="{Binding}" Click="RenameGame_Click" />
+            <MenuItem Header="Change artwork" CommandParameter="{Binding}" Click="ChangeArtwork_Click" />
             <MenuItem Header="Open folder" CommandParameter="{Binding}" Click="OpenGameFolder_Click" />
             <Separator />
             <MenuItem Header="{Binding HideActionLabel}" CommandParameter="{Binding}"
@@ -78,7 +80,7 @@
 
                         <StackPanel DockPanel.Dock="Bottom">
                             <Border Background="#191D24" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                                    CornerRadius="6" Padding="11" Margin="0,0,0,10">
+                                    CornerRadius="10" Padding="11" Margin="0,0,0,10">
                                 <StackPanel>
                                     <TextBlock Text="LOCAL-ONLY" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" />
                                     <TextBlock Text="Place these files in the DLSS Files folder beside DLAssAss 5 Tool.exe:"
@@ -112,14 +114,27 @@
                                                VerticalAlignment="Bottom" Margin="6,0,0,2" />
                                     <Button x:Name="UpdateAllButton" Content="UPDATE ALL" Click="UpdateAll_Click"
                                             Padding="10,4" Margin="12,0,0,0" FontSize="11"
-                                            VerticalAlignment="Center" />
+                                            VerticalAlignment="Center">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasMultipleAddonInstallations}" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                        <Setter Property="Foreground" Value="#101216" />
+                                                        <Setter Property="FontWeight" Value="Bold" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </StackPanel>
                                 <TextBlock Text="Select a row to install or restore files" Foreground="{StaticResource MutedBrush}"
                                            VerticalAlignment="Bottom" HorizontalAlignment="Right" />
                             </DockPanel>
 
                             <Grid Grid.Row="1" Margin="0,0,0,10">
-                                <Border Background="#14181E" Padding="12,9">
+                                <Border Background="#14181E" CornerRadius="10" Padding="12,9">
                                     <DockPanel>
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
                                             <ToggleButton x:Name="ShowHiddenButton" Content="SHOW HIDDEN" Margin="0,0,5,0"
@@ -160,7 +175,7 @@
                                         </ItemsControl>
                                     </DockPanel>
                                 </Border>
-                                <Border BorderBrush="#FF4D52" BorderThickness="1" IsHitTestVisible="False">
+                                <Border BorderBrush="#FF4D52" BorderThickness="1" CornerRadius="10" IsHitTestVisible="False">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Opacity" Value="0" />
@@ -190,21 +205,25 @@
                                 </Border>
                             </Grid>
 
-                            <ListView Grid.Row="2" ItemsSource="{Binding Games}"
-                                      SelectedItem="{Binding SelectedGame, Mode=TwoWay}"
-                                      ItemContainerStyle="{StaticResource FolderGameItem}"
-                                      GridViewColumnHeader.Click="GridHeader_Click"
-                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                <ListView.Style>
-                                    <Style TargetType="ListView" BasedOn="{StaticResource {x:Type ListView}}">
+                            <Border Grid.Row="2" Background="{StaticResource PanelBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    CornerRadius="10" ClipToBounds="True">
+                                <Border.Style>
+                                    <Style TargetType="Border">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsLibraryView}" Value="True">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </ListView.Style>
+                                </Border.Style>
+                            <ListView ItemsSource="{Binding Games}"
+                                      SelectedItem="{Binding SelectedGame, Mode=TwoWay}"
+                                      ItemContainerStyle="{StaticResource FolderGameItem}"
+                                      GridViewColumnHeader.Click="GridHeader_Click"
+                                      Background="Transparent" BorderThickness="0"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <ListView.View>
                                     <GridView AllowsColumnReorder="True">
                                         <GridViewColumn Width="46">
@@ -239,16 +258,13 @@
                                     </GridView>
                                 </ListView.View>
                             </ListView>
+                            </Border>
 
-                            <ListBox Grid.Row="2" ItemsSource="{Binding Games}"
-                                     SelectedItem="{Binding SelectedGame, Mode=TwoWay}"
-                                     ItemContainerStyle="{StaticResource LibraryGameItem}"
-                                     Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                     BorderThickness="1" Padding="12"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                <ListBox.Style>
-                                    <Style TargetType="ListBox">
+                            <Border Grid.Row="2" Background="{StaticResource PanelBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    CornerRadius="10" ClipToBounds="True">
+                                <Border.Style>
+                                    <Style TargetType="Border">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsLibraryView}" Value="True">
@@ -256,7 +272,13 @@
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </ListBox.Style>
+                                </Border.Style>
+                            <ListBox ItemsSource="{Binding Games}"
+                                     SelectedItem="{Binding SelectedGame, Mode=TwoWay}"
+                                     ItemContainerStyle="{StaticResource LibraryGameItem}"
+                                     Background="Transparent" BorderThickness="0" Padding="12"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <ListBox.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <WrapPanel IsItemsHost="True" />
@@ -264,8 +286,11 @@
                                 </ListBox.ItemsPanel>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                         <Grid ClipToBounds="True">
-                                             <Image Source="{Binding DisplayArt}" Stretch="UniformToFill" />
+                                        <Border CornerRadius="9" ClipToBounds="True">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="{Binding DisplayArt}" Stretch="UniformToFill" />
+                                            </Border.Background>
+                                         <Grid>
                                              <Ellipse Width="30" Height="30" Stroke="{StaticResource AccentBrush}"
                                                       StrokeThickness="3" StrokeDashArray="2,2"
                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -323,26 +348,31 @@
                                                     </TextBlock.Style>
                                                 </TextBlock>
                                             </Border>
-                                            <Border VerticalAlignment="Bottom" Background="#E6111419" Padding="9,8">
+                                            <Border VerticalAlignment="Bottom" Background="#E6111419" Padding="9,8"
+                                                    CornerRadius="0,0,9,9">
                                                 <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="SemiBold"
                                                            TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" />
                                             </Border>
-                                        </Grid>
+                                         </Grid>
+                                        </Border>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
+                            </Border>
 
                             <Border Grid.Row="3" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1" Padding="14" Margin="0,10,0,0">
+                                    BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,10,0,0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="76" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="64" Height="92" Background="#0D1015" BorderBrush="{StaticResource BorderBrush}"
-                                            BorderThickness="1" HorizontalAlignment="Left">
-                                        <Image Source="{Binding SelectedGame.DisplayArt}" Stretch="UniformToFill" />
+                                    <Border Width="64" Height="92" BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1" CornerRadius="8" HorizontalAlignment="Left">
+                                        <Border.Background>
+                                            <ImageBrush ImageSource="{Binding SelectedGame.DisplayArt}" Stretch="UniformToFill" />
+                                        </Border.Background>
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,18,0">
                                         <TextBlock Text="{Binding SelectedGame.Name, TargetNullValue=No game selected}"
@@ -382,42 +412,63 @@
                                          </Button>
                                          <Button Content="{Binding SelectedGame.AddonActionLabel, TargetNullValue=INSTALL}" Background="{StaticResource AccentBrush}" Foreground="#101216"
                                                  BorderBrush="{StaticResource AccentBrush}" FontWeight="Bold" Click="Install_Click" />
-                                         <Grid Margin="0,0,8,8">
-                                             <Button Content="PLAY" Click="Play_Click" Margin="0" />
-                                             <Border BorderBrush="{StaticResource AccentBrush}" BorderThickness="1"
-                                                     CornerRadius="4" IsHitTestVisible="False">
-                                                 <Border.Style>
-                                                     <Style TargetType="Border">
-                                                         <Setter Property="Opacity" Value="0" />
-                                                         <Setter Property="Visibility" Value="Collapsed" />
-                                                         <Style.Triggers>
-                                                             <MultiDataTrigger>
-                                                                 <MultiDataTrigger.Conditions>
-                                                                     <Condition Binding="{Binding SelectedGame.HasReShade}" Value="True" />
-                                                                     <Condition Binding="{Binding SelectedGame.HasAddon}" Value="True" />
-                                                                 </MultiDataTrigger.Conditions>
-                                                                 <Setter Property="Visibility" Value="Visible" />
-                                                                 <MultiDataTrigger.EnterActions>
-                                                                     <BeginStoryboard x:Name="PlayReadyPulse">
-                                                                         <Storyboard>
-                                                                             <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="0.8"
-                                                                                              Duration="0:0:1.4" AutoReverse="True" RepeatBehavior="Forever">
-                                                                                 <DoubleAnimation.EasingFunction>
-                                                                                     <SineEase EasingMode="EaseInOut" />
-                                                                                 </DoubleAnimation.EasingFunction>
-                                                                             </DoubleAnimation>
-                                                                         </Storyboard>
-                                                                     </BeginStoryboard>
-                                                                 </MultiDataTrigger.EnterActions>
-                                                                 <MultiDataTrigger.ExitActions>
-                                                                     <RemoveStoryboard BeginStoryboardName="PlayReadyPulse" />
-                                                                 </MultiDataTrigger.ExitActions>
-                                                             </MultiDataTrigger>
-                                                         </Style.Triggers>
+                                         <Button Content="PLAY" Click="Play_Click">
+                                             <Button.Style>
+                                                     <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                         <Setter Property="Template">
+                                                             <Setter.Value>
+                                                                 <ControlTemplate TargetType="Button">
+                                                                     <Grid>
+                                                                         <Border x:Name="PlayBaseLayer" Background="#29303A"
+                                                                                 BorderBrush="#343C48" BorderThickness="1" CornerRadius="4" />
+                                                                         <Border x:Name="PlayReadyLayer" Background="{StaticResource AccentBrush}"
+                                                                                 BorderBrush="{StaticResource AccentBrush}" BorderThickness="1"
+                                                                                 CornerRadius="4" Opacity="0" Visibility="Collapsed" />
+                                                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                           Margin="{TemplateBinding Padding}" />
+                                                                     </Grid>
+                                                                     <ControlTemplate.Triggers>
+                                                                         <Trigger Property="IsMouseOver" Value="True">
+                                                                             <Setter TargetName="PlayBaseLayer" Property="Background" Value="#39424F" />
+                                                                         </Trigger>
+                                                                         <Trigger Property="IsPressed" Value="True">
+                                                                             <Setter TargetName="PlayBaseLayer" Property="Background" Value="#222831" />
+                                                                         </Trigger>
+                                                                         <Trigger Property="IsEnabled" Value="False">
+                                                                             <Setter Property="Opacity" Value="0.45" />
+                                                                         </Trigger>
+                                                                         <MultiDataTrigger>
+                                                                             <MultiDataTrigger.Conditions>
+                                                                                 <Condition Binding="{Binding SelectedGame.HasReShade}" Value="True" />
+                                                                                 <Condition Binding="{Binding SelectedGame.HasAddon}" Value="True" />
+                                                                             </MultiDataTrigger.Conditions>
+                                                                             <Setter TargetName="PlayReadyLayer" Property="Visibility" Value="Visible" />
+                                                                             <Setter TargetName="PlayReadyLayer" Property="Opacity" Value="1" />
+                                                                             <MultiDataTrigger.EnterActions>
+                                                                                 <BeginStoryboard x:Name="PlayReadyPulse">
+                                                                                     <Storyboard>
+                                                                                         <DoubleAnimation Storyboard.TargetName="PlayReadyLayer"
+                                                                                                          Storyboard.TargetProperty="Opacity"
+                                                                                                          From="1" To="0" Duration="0:0:1.4"
+                                                                                                          AutoReverse="True" RepeatBehavior="Forever">
+                                                                                             <DoubleAnimation.EasingFunction>
+                                                                                                 <SineEase EasingMode="EaseInOut" />
+                                                                                             </DoubleAnimation.EasingFunction>
+                                                                                         </DoubleAnimation>
+                                                                                     </Storyboard>
+                                                                                 </BeginStoryboard>
+                                                                             </MultiDataTrigger.EnterActions>
+                                                                             <MultiDataTrigger.ExitActions>
+                                                                                 <RemoveStoryboard BeginStoryboardName="PlayReadyPulse" />
+                                                                             </MultiDataTrigger.ExitActions>
+                                                                         </MultiDataTrigger>
+                                                                     </ControlTemplate.Triggers>
+                                                                 </ControlTemplate>
+                                                             </Setter.Value>
+                                                         </Setter>
                                                      </Style>
-                                                 </Border.Style>
-                                             </Border>
-                                         </Grid>
+                                                 </Button.Style>
+                                         </Button>
                                          <Button Content="RESTORE LATEST" Click="Restore_Click" />
                                         <Button Content="OPEN FOLDER" Click="OpenGameFolder_Click" />
                                     </WrapPanel>
@@ -433,7 +484,7 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="6" Padding="18" Margin="0,0,0,12">
+                                    BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,12">
                                 <StackPanel>
                                     <TextBlock Text="USER-SUPPLIED DLSS FILES" FontWeight="Bold" />
                                     <TextBlock Text="Published builds include this folder and instructions, but no NVIDIA DLLs."
@@ -446,7 +497,7 @@
                                 </StackPanel>
                             </Border>
                             <Border Grid.Row="1" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="6" Padding="18">
+                                    BorderThickness="1" CornerRadius="10" Padding="18">
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Top" Text="OPERATION LOG" FontWeight="Bold" Margin="0,0,0,10" />
                                     <TextBox Text="{Binding LogText}" IsReadOnly="True" AcceptsReturn="True"
@@ -458,6 +509,37 @@
                     </TabItem>
                 </TabControl>
             </Grid>
+
+            <Border Grid.RowSpan="2" Panel.ZIndex="1000" Background="#D10D0F13">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoadingOverlayVisible}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Ellipse Width="54" Height="54" Stroke="{StaticResource AccentBrush}"
+                             StrokeThickness="4" StrokeDashArray="2,3" RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.RenderTransform><RotateTransform /></Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                         From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    <TextBlock Text="{Binding LoadingOverlayText}" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Margin="0,14,0,0" />
+                </StackPanel>
+            </Border>
         </Grid>
     </Border>
 </Window>

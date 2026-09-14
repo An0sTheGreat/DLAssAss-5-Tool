@@ -8,8 +8,14 @@ public sealed class ManagerSettings
     public List<string> SearchDirectories { get; set; } = [];
     public List<string> HiddenGameDirectories { get; set; } = [];
     public Dictionary<string, string> CustomGameNames { get; set; } = new(DirectoryPath.Comparer);
+    public Dictionary<string, string> CustomArtworkPaths { get; set; } = new(DirectoryPath.Comparer);
     public string? DlssFilesDirectory { get; set; }
     public bool IsLibraryView { get; set; } = true;
+    public double? WindowLeft { get; set; }
+    public double? WindowTop { get; set; }
+    public double? WindowWidth { get; set; }
+    public double? WindowHeight { get; set; }
+    public bool WindowMaximized { get; set; }
 }
 
 public sealed class AppStore
@@ -40,6 +46,7 @@ public sealed class AppStore
             settings.SearchDirectories = DirectoryPath.NormalizeDistinct(settings.SearchDirectories);
             settings.HiddenGameDirectories = DirectoryPath.NormalizeDistinct(settings.HiddenGameDirectories);
             settings.CustomGameNames = NormalizeNames(settings.CustomGameNames);
+            settings.CustomArtworkPaths = NormalizePaths(settings.CustomArtworkPaths);
             return settings;
         }
         catch
@@ -54,6 +61,7 @@ public sealed class AppStore
         settings.SearchDirectories = DirectoryPath.NormalizeDistinct(settings.SearchDirectories);
         settings.HiddenGameDirectories = DirectoryPath.NormalizeDistinct(settings.HiddenGameDirectories);
         settings.CustomGameNames = NormalizeNames(settings.CustomGameNames);
+        settings.CustomArtworkPaths = NormalizePaths(settings.CustomArtworkPaths);
         Directory.CreateDirectory(DataDirectory);
         File.WriteAllText(SettingsPath, JsonSerializer.Serialize(settings, JsonOptions));
     }
@@ -76,6 +84,19 @@ public sealed class AppStore
             }
             catch { }
         }
+        return result;
+    }
+
+    private static Dictionary<string, string> NormalizePaths(Dictionary<string, string>? paths)
+    {
+        var result = new Dictionary<string, string>(DirectoryPath.Comparer);
+        foreach (var pair in paths ?? [])
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(pair.Value))
+                    result[DirectoryPath.Normalize(pair.Key)] = Path.GetFullPath(pair.Value);
+            }
+            catch { }
         return result;
     }
 }
