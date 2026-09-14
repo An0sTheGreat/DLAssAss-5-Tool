@@ -1,5 +1,15 @@
 # Changelog
 
+## [v.1.0.6] - 2026-09-13
+
+- Default every unsaved Pass 1 and additional-pass Neural Color Strength slider
+  to 100%. Existing saved values remain unchanged.
+- Expand Neural Color Strength to 0–200% and warn on hover that values above
+  100% may oversaturate, leave the display gamut or strengthen haloing.
+- Add a themed right-click **Reset** menu to every native RenoDX and custom
+  Neural Rendering slider. It resets only the selected slider through the
+  existing save path; resolution stages 100% until **Apply** is pressed.
+
 ## [v.1.0.5] - 2026-09-12
 
 - Add a themed **UPDATE ALL** button beside the detected-game count. It updates
