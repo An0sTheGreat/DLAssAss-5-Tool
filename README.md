@@ -105,8 +105,9 @@ correct output in every game. Experimental API support is unchanged.
 PLAY pulses fully between green and gray only when the selected game has both
 ReShade and the add-on installed. It returns to gray otherwise; launching is unchanged.
 
-Loose add-on binaries for manual installation are published from the
-[`standalone-addon`](../../tree/standalone-addon) branch.
+Loose add-on binaries for manual installation are published in the separate
+[`DLSS-5-Super-Anus-Manual`](https://github.com/An0sTheGreat/DLSS-5-Super-Anus-Manual)
+repository.
 
 ## Features
 
@@ -208,8 +209,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish.ps1
 The publisher refuses to include NVIDIA DLLs and validates the add-on payload
 against its pinned SHA-256 before creating the archive.
 
-Public releases use two paired channels: `main` publishes the complete manager
-application, while `standalone-addon` publishes only the matching loose
-`.addon64` file. See [Release channels](docs/RELEASE_CHANNELS.md).
+Public releases use two paired repositories: this repository publishes the
+complete manager application, while `DLSS-5-Super-Anus-Manual` publishes only
+the matching loose `.addon64` file. See
+[Release channels](docs/RELEASE_CHANNELS.md).
 
 Third-party attribution is available in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

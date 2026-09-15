@@ -1,11 +1,13 @@
 # Release channels
 
-Every public release is published through both channels:
+Every public release is published through both repositories:
 
-- `main` contains the complete DLAssAss 5 Tool source. Its release includes the
-  self-contained Windows application archive and checksum file.
-- `standalone-addon` contains the add-on source. Its release includes exactly
-  one loose `renodx-dlss5-super-anus.addon64` asset for manual installation.
+- [`DLAssAss-5-Tool`](https://github.com/An0sTheGreat/DLAssAss-5-Tool) contains
+  the complete manager source. Its release includes the self-contained Windows
+  application archive and checksum file.
+- [`DLSS-5-Super-Anus-Manual`](https://github.com/An0sTheGreat/DLSS-5-Super-Anus-Manual)
+  contains the add-on source. Its release includes exactly one loose
+  `renodx-dlss5-super-anus.addon64` asset for manual installation.
 
 The two release notes must identify the matching add-on version and SHA-256.
 Neither channel bundles NVIDIA runtime DLLs.
