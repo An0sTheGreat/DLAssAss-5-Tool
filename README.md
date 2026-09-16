@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Version 1.0.7** — [Download the Windows release](../../releases/tag/v.1.0.7)
+**Version 1.0.8** — [Download the Windows release](../../releases/tag/v.1.0.8)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
@@ -34,7 +34,7 @@ Neural Rendering support.
 | ❌ DirectX 9 | No | No native Neural Rendering backend. |
 | ❌ OpenGL | No | No native Neural Rendering backend. |
 
-API support does not guarantee correct results in every game. Version 1.0.2:
+API support does not guarantee correct results in every game. The included addon:
 **General frame-gen flickering fixes improved.** The included addon prevents
 duplicate NR processing through nested callbacks; this is not a universal
 Frame Generation compatibility guarantee.
@@ -52,7 +52,8 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   100%. Transfer 100%, colour 100% and sharpness 0% retain the native first-pass
   bypass at 100% resolution. Non-neutral settings use additional GPU working
   textures/resolve work, with the existing memory and fence protections.
-- The main **Neural Detail and Colour** section controls **Pass 1 only**.
+- Encoding and the main **Neural Detail and Colour** section control **Pass 1**
+  and restore independently for each preset.
 - **Per-Pass Controls:** each additional pass has independent transfer, colour
   and sharpness controls; changes to Pass 1 no longer propagate to later passes.
   Only enabled passes appear. Sections start expanded and remember
@@ -64,16 +65,19 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   base settings and enabled per-pass overrides are preserved. Old disabled
   overrides start from the new independent defaults. Retired detail/coupling
   keys are ignored. Settings are stored per game in ReShade's
-  configuration, independently of the three original preset banks.
+  configuration in the three original preset banks.
 - **Multipass Motion** appears below Hook Method. Reuse Game Motion is the
   recommended default; legacy zero motion and diagnostic zero-motion/reset modes
   remain available and persist per game. Switching modes safely resets history.
+- **Multipass Edge Protection** is preset-scoped and applies only to Pass 2 and
+  later. Strength, thickness, softness and a +/-6 pixel shift are adjustable;
+  visualization displays the exact combined depth/residual mask.
 - Right-click any native RenoDX or custom Neural Rendering slider and choose
   **Reset** to restore only that slider to its defined default. Resetting Neural
   Rendering Resolution stages 100% and still requires **Apply**.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.0.6.17** (manager file version **1.0.7.0**).
+  shows addon file version **1.0.8.18** (manager file version **1.0.8.0**).
 
 These new image controls are DX12-only. Experimental DX11/Vulkan scope is unchanged.
 If safe working resources are unavailable, the addon retains native output.
@@ -98,7 +102,7 @@ on native fallback. The first pass now participates in complete-group transition
 tracking, allowing additional-pass controls to resume. Sharpening stays independent
 of transfer, and interrupted dependent history resets on managed recovery.
 
-See [v.1.0.7 release notes and validation](docs/MANAGER_1_0_7_RELEASE.md).
+See [v.1.0.8 release notes and validation](docs/MANAGER_1_0_8_RELEASE.md).
 These changes do not establish that Cyberpunk shimmer is fixed or guarantee
 correct output in every game. Experimental API support is unchanged.
 

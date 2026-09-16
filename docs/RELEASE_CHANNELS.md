@@ -12,6 +12,6 @@ Every public release is published through both repositories:
 The two release notes must identify the matching add-on version and SHA-256.
 Neither channel bundles NVIDIA runtime DLLs.
 
-Manager tags use `v.<manager-version>` (for example, `v.1.0.7`). Standalone
-add-on tags use `v<addon-file-version>` (for example, `v1.0.6.17`). The newest
+Manager tags use `v.<manager-version>` (for example, `v.1.0.8`). Standalone
+add-on tags use `v<addon-file-version>` (for example, `v1.0.8.18`). The newest
 manager application release remains the repository's **Latest** release.

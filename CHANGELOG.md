@@ -1,5 +1,16 @@
 # Changelog
 
+## [v.1.0.8] - 2026-09-15
+
+- Bundle addon 1.0.8.18 with preset-scoped Encoding, Neural Detail and Colour,
+  and experimental multipass edge protection controls.
+- Add adjustable edge protection strength, thickness, softness, inward/outward
+  shift, and mask visualization for Pass 2 and later.
+- Fix multipass image freezing/black output caused by edge-shader GPU load and
+  a root-constant layout mismatch.
+- Preserve the TLOU2 nested Frame Generation source guard and fix multipass
+  NR ON/OFF screenshots so the OFF image contains zero NR passes.
+
 ## [v.1.0.7] - 2026-09-13
 
 - Remember the last restored window size and position, including when closing

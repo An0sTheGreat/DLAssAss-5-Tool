@@ -6,8 +6,8 @@ param(
 $ErrorActionPreference = "Stop"
 $managerRoot = Split-Path -Parent $PSScriptRoot
 $sourceAddon = Join-Path $managerRoot "Payload\renodx-dlss5-super-anus.addon64"
-$expectedAddonHash = "8F282AC07D6F430580626A4DA375E2501912C450CF6D22B857406E91874A9622"
-$releaseDirectory = Join-Path $managerRoot "artifacts\v.1.0.7"
+$expectedAddonHash = "6A1A9F37FB8F861C02BFDFFF001C5285F202649C694E10356BFBB5F1F9C3EA12"
+$releaseDirectory = Join-Path $managerRoot "artifacts\v.1.0.8"
 $publishDirectory = Join-Path $releaseDirectory "publish"
 $archive = Join-Path $releaseDirectory "DLAssAss-5-Tool-$Runtime.zip"
 $fullManagerRoot = [IO.Path]::GetFullPath($managerRoot) + [IO.Path]::DirectorySeparatorChar
@@ -58,6 +58,6 @@ $checksums | Set-Content -LiteralPath (Join-Path $publishDirectory "SHA256SUMS.t
 & tar.exe -a -c -f $archive -C $publishDirectory .
 if ($LASTEXITCODE -ne 0) { throw "archive creation failed." }
 $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
-"$archiveHash  $([IO.Path]::GetFileName($archive))" | Set-Content -LiteralPath (Join-Path $releaseDirectory "SHA256SUMS-v.1.0.7.txt") -Encoding utf8
+"$archiveHash  $([IO.Path]::GetFileName($archive))" | Set-Content -LiteralPath (Join-Path $releaseDirectory "SHA256SUMS-v.1.0.8.txt") -Encoding utf8
 Write-Host "Published: $publishDirectory"
 Write-Host "Archive:   $archive"
