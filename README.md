@@ -80,7 +80,7 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   Rendering Resolution stages 100% and still requires **Apply**.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.0.9.19** (manager file version **1.0.9.0**).
+  shows addon file version **1.0.9.21** (manager file version **1.0.9.0**).
 
 These new image controls are DX12-only. Experimental DX11/Vulkan scope is unchanged.
 If safe working resources are unavailable, the addon retains native output.

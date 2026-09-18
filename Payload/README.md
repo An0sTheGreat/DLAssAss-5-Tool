@@ -8,8 +8,8 @@ Maintainers must place that file here before running `scripts/publish.ps1`.
 The binary is ignored by Git and validated against the pinned SHA-256 before
 packaging. NVIDIA DLLs never belong in this folder.
 
-Manager `1.0.9` includes release addon `1.0.9-startup-history.1`, Windows file
-version `1.0.9.19`, with independent controls for each pass, colour 100% and sharpness
+Manager `1.0.9` includes release addon `1.0.9-vram-warning.2`, Windows file
+version `1.0.9.21`, with independent controls for each pass, colour 100% and sharpness
 0% defaults, shared sequential-pass scratch resources, and fence-drained admission
 when increasing passes. Compact native resolution controls remain available when
 scaled allocation fails, provided their smaller allocation fits safely. The nested-SR guard
