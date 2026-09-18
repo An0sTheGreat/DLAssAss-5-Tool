@@ -1,5 +1,14 @@
 # Changelog
 
+## [v.1.0.9] - 2026-09-17
+
+- Add a persistent launch option that starts Neural Rendering enabled or disabled.
+- Add Chained Temporal History and make it the recommended default for new
+  configurations while retaining existing saved motion selections.
+- Add a master switch that completely bypasses multipass edge masking.
+- Place the custom launch option above RenoDX's native preset and options-mode
+  selectors without renaming those native controls.
+
 ## [v.1.0.8] - 2026-09-15
 
 - Bundle addon 1.0.8.18 with preset-scoped Encoding, Neural Detail and Colour,

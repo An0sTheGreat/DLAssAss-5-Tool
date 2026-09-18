@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Version 1.0.8** — [Download the Windows release](../../releases/tag/v.1.0.8)
+**Version 1.0.9** — [Download the Windows release](../../releases/tag/v.1.0.9)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
@@ -66,18 +66,21 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   overrides start from the new independent defaults. Retired detail/coupling
   keys are ignored. Settings are stored per game in ReShade's
   configuration in the three original preset banks.
-- **Multipass Motion** appears below Hook Method. Reuse Game Motion is the
-  recommended default; legacy zero motion and diagnostic zero-motion/reset modes
-  remain available and persist per game. Switching modes safely resets history.
+- **Multipass Motion** appears below Hook Method. Chained Temporal History is
+  recommended and is the default for new configurations; existing saved modes
+  remain unchanged. Switching modes safely resets history.
 - **Multipass Edge Protection** is preset-scoped and applies only to Pass 2 and
   later. Strength, thickness, softness and a +/-6 pixel shift are adjustable;
-  visualization displays the exact combined depth/residual mask.
+  visualization displays the exact combined depth/residual mask. A master switch
+  fully bypasses the masking path when disabled.
+- **Neural Rendering Enabled On Launch** appears above the native preset and
+  options-mode selectors and persists the requested initial state.
 - Right-click any native RenoDX or custom Neural Rendering slider and choose
   **Reset** to restore only that slider to its defined default. Resetting Neural
   Rendering Resolution stages 100% and still requires **Apply**.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.0.8.18** (manager file version **1.0.8.0**).
+  shows addon file version **1.0.9.19** (manager file version **1.0.9.0**).
 
 These new image controls are DX12-only. Experimental DX11/Vulkan scope is unchanged.
 If safe working resources are unavailable, the addon retains native output.
@@ -102,7 +105,7 @@ on native fallback. The first pass now participates in complete-group transition
 tracking, allowing additional-pass controls to resume. Sharpening stays independent
 of transfer, and interrupted dependent history resets on managed recovery.
 
-See [v.1.0.8 release notes and validation](docs/MANAGER_1_0_8_RELEASE.md).
+See [v.1.0.9 release notes and validation](docs/MANAGER_1_0_9_RELEASE.md).
 These changes do not establish that Cyberpunk shimmer is fixed or guarantee
 correct output in every game. Experimental API support is unchanged.
 
