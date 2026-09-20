@@ -19,6 +19,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly InstallerService _installer;
     private readonly CoverArtService _coverArt;
     private readonly ReShadeService _reshade = new();
+    private readonly Dlss5BridgeService _bridge = new();
     private ManagerSettings _settings;
     private GameEntry? _selectedGame;
     private string _activity = "Ready";
@@ -339,8 +340,40 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (targetDirectory is null) { Show("The selected game does not have a usable executable."); return; }
         if (!ThemedDialog.Confirm(this, game.HasAddon ? "Confirm reinstallation" : "Confirm installation",
             $"{(game.HasAddon ? "Reinstall" : "Install")} the add-on and available validated user-supplied DLSS files beside the selected executable:\n\n{targetDirectory}\n\nExisting files are backed up; your settings are kept.")) return;
-        await RunOperation("Installing…", () => _installer.Install(game.ExecutablePath!,
-            DlssFilesDirectory, true));
+
+        var apis = ReShadeService.SupportedGraphicsApis(game.GraphicsApi);
+        var graphicsApi = apis.Count switch
+        {
+            0 => null,
+            1 => apis[0],
+            _ => ThemedDialog.Choose(this, "Choose game graphics API",
+                $"Detected graphics APIs: {string.Join(", ", apis)}\n\nSelect the API you will use:", apis)
+        };
+        if (apis.Count > 1 && graphicsApi is null) return;
+
+        Dlss5BridgeDownload? bridge = null;
+        try
+        {
+            if (Dlss5BridgeService.RequiresBridge(graphicsApi) &&
+                ThemedDialog.Confirm(this, "DLSS 5 Bridge required",
+                    "This game utilizes the DirectX 11 API. DLSS 5 Bridge is required for this addon to work. Download and install now?",
+                    MessageBoxImage.Warning))
+            {
+                Activity = "Checking the latest official DLSS 5 Bridge release…";
+                bridge = await _bridge.DownloadLatestAsync();
+                AppendLog($"Downloaded official DLSS 5 Bridge {bridge.Version}.");
+            }
+            await RunOperation("Installing…", () => _installer.Install(game.ExecutablePath!,
+                DlssFilesDirectory, true, bridge?.Path));
+        }
+        catch (Exception ex)
+        {
+            var message = "DLSS 5 Bridge installation failed before any game files were changed: " + ex.Message;
+            AppendLog(message);
+            Show(message, MessageBoxImage.Error);
+            Activity = "Ready";
+        }
+        finally { bridge?.Dispose(); }
     }
 
     private async void UpdateAll_Click(object sender, RoutedEventArgs e)

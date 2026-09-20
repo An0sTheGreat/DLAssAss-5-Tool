@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Version 1.0.9** — [Download the Windows release](../../releases/tag/v.1.0.9)
+**Version 1.1.0** — [Download the Windows release](../../releases/tag/v1.1.0)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
@@ -80,9 +80,10 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   Rendering Resolution stages 100% and still requires **Apply**.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.0.9.21** (manager file version **1.0.9.0**).
+  shows addon file version **1.1.0.23** (manager file version **1.1.0.0**).
 
-These new image controls are DX12-only. Experimental DX11/Vulkan scope is unchanged.
+These image controls are available in DX12 games and in DX11 games after the
+official DX11 bridge supplies a tracked DX12 evaluation. Vulkan scope is unchanged.
 If safe working resources are unavailable, the addon retains native output.
 
 Upgrading the tool does not automatically update installed games. Close the game,
@@ -100,12 +101,17 @@ after temporary allocation failure; the menu reports effective resolution when
 it differs from the request. The 512 MiB cache cap, VRAM reserve and safe fallback
 remain. Genuine resource exhaustion can still temporarily bypass controls.
 
+Bridge-backed DX11 sessions retain same-generation pooled resources while Neural
+Rendering is active. Valid native features that remain in host slots are also
+retained across stream generations. Reducing the pass count therefore avoids live
+NVIDIA feature release and keeps reusable pass resources available.
+
 At 100% with neutral Pass 1, changing the pass count previously left later passes
 on native fallback. The first pass now participates in complete-group transition
 tracking, allowing additional-pass controls to resume. Sharpening stays independent
 of transfer, and interrupted dependent history resets on managed recovery.
 
-See [v.1.0.9 release notes and validation](docs/MANAGER_1_0_9_RELEASE.md).
+See [v1.1.0 release notes and validation](docs/MANAGER_1_1_0_RELEASE.md).
 These changes do not establish that Cyberpunk shimmer is fixed or guarantee
 correct output in every game. Experimental API support is unchanged.
 

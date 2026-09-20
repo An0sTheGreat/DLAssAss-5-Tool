@@ -1,5 +1,16 @@
 # Changelog
 
+## [v1.1.0] - 2026-09-19
+
+- Prompt DX11 users during interactive add-on installation to download and
+  transactionally install the latest stable official DLSS 5 Bridge release.
+- Enable the neural resolution, detail, colour, edge, and per-pass controls for
+  DX11 games after a tracked evaluation from the official DX11 bridge.
+- Keep same-generation bridge working resources cached while Neural Rendering
+  remains active, preventing live cleanup when reducing the pass count.
+- Retain valid host-owned native features during active DX11 bridge sessions,
+  avoiding NVIDIA feature release during live 1 -> 2 -> 1 pass transitions.
+
 ## [v.1.0.9] - 2026-09-17
 
 - Add a persistent launch option that starts Neural Rendering enabled or disabled.

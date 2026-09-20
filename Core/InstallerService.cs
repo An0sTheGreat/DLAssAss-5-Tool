@@ -38,11 +38,15 @@ public sealed class InstallerService
         _payloadDirectory = payloadDirectory ?? Path.Combine(AppContext.BaseDirectory, "Payload");
     }
 
-    public InstallResult Install(string executablePath, string dlssDirectory, bool includeDlssFiles)
+    public InstallResult Install(string executablePath, string dlssDirectory, bool includeDlssFiles,
+        string? bridgePath = null)
     {
         var addon = Path.Combine(_payloadDirectory, AddonName);
         if (!File.Exists(addon))
             return Fail($"Manager payload is missing: {addon}");
+        if (bridgePath is not null && (!File.Exists(bridgePath) ||
+            !Path.GetFileName(bridgePath).Equals(Dlss5BridgeService.AssetName, StringComparison.Ordinal)))
+            return Fail("The downloaded DLSS 5 Bridge file is missing or invalid.");
         var gameDirectory = InstallDirectory(executablePath);
         if (gameDirectory is null) return Fail("The selected game executable does not exist.");
         if (!HasReShade(gameDirectory))
@@ -51,6 +55,7 @@ public sealed class InstallerService
         var sources = new List<string> { addon };
         if (includeDlssFiles)
             sources.AddRange(RequiredDlssFiles.Select(name => Path.Combine(dlssDirectory, name)).Where(File.Exists));
+        if (bridgePath is not null) sources.Add(bridgePath);
 
         var backupDirectory = Path.Combine(_backupRoot, SafeName(gameDirectory),
             DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));

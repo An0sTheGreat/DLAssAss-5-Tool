@@ -6,10 +6,10 @@ param(
 $ErrorActionPreference = "Stop"
 $managerRoot = Split-Path -Parent $PSScriptRoot
 $sourceAddon = Join-Path $managerRoot "Payload\renodx-dlss5-super-anus.addon64"
-$expectedAddonHash = "CE14A81D8C155A5B9AAAB0B77572E2567408D72EC318BB4444CF5177524817A4"
-$releaseDirectory = Join-Path $managerRoot "artifacts\v.1.0.9"
+$expectedAddonHash = "920889CDBCA28128CB68F1F3963768F957AAE523F8C2CA49C232808CFB4C6AB7"
+$releaseDirectory = Join-Path $managerRoot "artifacts\v1.1.0"
 $publishDirectory = Join-Path $releaseDirectory "publish"
-$archive = Join-Path $releaseDirectory "DLAssAss-5-Tool-$Runtime.zip"
+$archive = Join-Path $releaseDirectory "DLAssAss-5-Tool-v1.1.0-$Runtime.zip"
 $fullManagerRoot = [IO.Path]::GetFullPath($managerRoot) + [IO.Path]::DirectorySeparatorChar
 if (-not ([IO.Path]::GetFullPath($publishDirectory).StartsWith($fullManagerRoot, [StringComparison]::OrdinalIgnoreCase))) {
     throw "Unsafe publish path: $publishDirectory"
@@ -58,6 +58,6 @@ $checksums | Set-Content -LiteralPath (Join-Path $publishDirectory "SHA256SUMS.t
 & tar.exe -a -c -f $archive -C $publishDirectory .
 if ($LASTEXITCODE -ne 0) { throw "archive creation failed." }
 $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
-"$archiveHash  $([IO.Path]::GetFileName($archive))" | Set-Content -LiteralPath (Join-Path $releaseDirectory "SHA256SUMS-v.1.0.9.txt") -Encoding utf8
+"$archiveHash  $([IO.Path]::GetFileName($archive))" | Set-Content -LiteralPath (Join-Path $releaseDirectory "SHA256SUMS-v1.1.0.txt") -Encoding utf8
 Write-Host "Published: $publishDirectory"
 Write-Host "Archive:   $archive"

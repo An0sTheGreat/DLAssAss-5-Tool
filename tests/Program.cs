@@ -75,6 +75,32 @@ try
     Require(ReShadeService.ResolveInstallerApi("DX12 / DX11") is null &&
         ReShadeService.SupportedGraphicsApis("DX12 / DX11").SequenceEqual(["DX12", "DX11"]),
         "Multi-API games must require an explicit supported API selection.");
+    var bridgeRelease = Dlss5BridgeService.ParseLatestRelease("""
+        {
+          "tag_name": "v1.4.12",
+          "draft": false,
+          "prerelease": false,
+          "assets": [{
+            "name": "dlss5-bridge.addon64",
+            "browser_download_url": "https://github.com/NIGos/dlss5-bridge/releases/download/v1.4.12/dlss5-bridge.addon64",
+            "size": 508928,
+            "digest": "sha256:4F2ACECC1026AE89AC0B92767BE66CEEA2662AD0EF88710B89C7DA7840D548D4"
+          }]
+        }
+        """);
+    Require(bridgeRelease.Version == "v1.4.12" && bridgeRelease.DownloadUrl.Host == "github.com" &&
+        bridgeRelease.Sha256 == "4F2ACECC1026AE89AC0B92767BE66CEEA2662AD0EF88710B89C7DA7840D548D4",
+        "Official DLSS 5 Bridge release parsing failed.");
+    Require(Dlss5BridgeService.RequiresBridge("DX11") && !Dlss5BridgeService.RequiresBridge("DX12") &&
+        !Dlss5BridgeService.RequiresBridge(null), "DLSS 5 Bridge prompting must be restricted to DX11.");
+    RequireThrows<InvalidDataException>(() => Dlss5BridgeService.ParseLatestRelease("""
+        {
+          "tag_name": "v1.4.13-pre8",
+          "draft": false,
+          "prerelease": true,
+          "assets": []
+        }
+        """), "Prerelease Bridge metadata was accepted as the latest stable release.");
 
     var store = new AppStore(Path.Combine(root, "Store"));
     var customArt = Path.Combine(root, "custom-art.png");
@@ -111,13 +137,21 @@ try
     Require(!loaded.IsLibraryView, "View preference was not persisted.");
     Require(loaded.WindowLeft == 140 && loaded.WindowTop == 90 && loaded.WindowWidth == 1080 &&
         loaded.WindowHeight == 720 && loaded.WindowMaximized, "Window placement was not persisted.");
-    Require(service.Install(executable, dlss, true).Success, "Install failed.");
+    var bridgeSourceDirectory = Path.Combine(root, "Bridge");
+    Directory.CreateDirectory(bridgeSourceDirectory);
+    var bridgeSource = Path.Combine(bridgeSourceDirectory, Dlss5BridgeService.AssetName);
+    var installedBridge = Path.Combine(installDirectory, Dlss5BridgeService.AssetName);
+    File.WriteAllText(bridgeSource, "latest bridge");
+    File.WriteAllText(installedBridge, "old bridge");
+    Require(service.Install(executable, dlss, true, bridgeSource).Success, "Install failed.");
     Require(File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == "replacement", "DLSS replacement failed.");
     Require(File.Exists(Path.Combine(installDirectory, InstallerService.AddonName)), "Add-on was not installed beside the executable.");
+    Require(File.ReadAllText(installedBridge) == "latest bridge", "DLSS 5 Bridge was not installed beside the executable.");
     Require(File.ReadAllText(Path.Combine(game, InstallerService.AddonName)) == "misplaced", "Parent-folder files were modified.");
     Require(service.RestoreLatest(executable).Success, "Restore failed.");
     Require(File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == "original", "Original DLSS file was not restored.");
     Require(!File.Exists(Path.Combine(installDirectory, InstallerService.AddonName)), "New add-on was not removed by restore.");
+    Require(File.ReadAllText(installedBridge) == "old bridge", "The previous DLSS 5 Bridge was not restored.");
     Require(service.Install(executable, dlss, true).Success, "Second installation failed.");
     File.WriteAllText(Path.Combine(payload, InstallerService.AddonName), "updated addon");
     Require(service.Install(executable, dlss, true).Success, "Reinstallation failed.");
@@ -161,9 +195,10 @@ try
     var mainWindowCode = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "MainWindow.xaml.cs"));
     Require(mainWindowCode.Contains("Analyzing Games...") &&
         mainWindowCode.Contains("Updating Selected Games...") &&
-        mainWindowCode.Contains("Installed 1 file(s)"),
+        mainWindowCode.Contains("Installed 1 file(s)") &&
+        mainWindowCode.Contains("This game utilizes the DirectX 11 API. DLSS 5 Bridge is required for this addon to work. Download and install now?"),
         "Operation overlay text or concise update result text is missing.");
-    Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade modes, preferences, install, addon-only update/refusal, backup, and restore");
+    Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade modes, Bridge parsing/gating, preferences, install, addon-only update/refusal, backup, and restore");
 }
 finally
 {
@@ -173,4 +208,11 @@ finally
 static void Require(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
+}
+
+static void RequireThrows<T>(Action action, string message) where T : Exception
+{
+    try { action(); }
+    catch (T) { return; }
+    throw new InvalidOperationException(message);
 }
