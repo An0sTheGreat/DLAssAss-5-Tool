@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Version 1.1.1** — [Download the Windows release](../../releases/tag/v1.1.1)
+**Version 1.1.2** — [Download the Windows release](../../releases/tag/v1.1.2)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, its pinned DLSS runtime files,
@@ -88,7 +88,7 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   Rendering Resolution stages 100% and still requires **Apply**.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.1.1.30** (manager file version **1.1.1.0**).
+  shows addon file version **1.1.2.31** (manager file version **1.1.2.0**).
 
 These image controls are available in DX12 and supported DX11 games. The add-on
 does not require the external DLSS 5 Bridge. Vulkan scope is unchanged.
@@ -119,7 +119,7 @@ on native fallback. The first pass now participates in complete-group transition
 tracking, allowing additional-pass controls to resume. Sharpening stays independent
 of transfer, and interrupted dependent history resets on managed recovery.
 
-See [v1.1.1 release notes and validation](docs/MANAGER_1_1_1_RELEASE.md).
+See [v1.1.2 release notes and validation](docs/MANAGER_1_1_2_RELEASE.md).
 These changes do not establish that DX11 Present-hook flickering is fixed or guarantee
 correct output in every game. Experimental API support is unchanged.
 

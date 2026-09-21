@@ -8,8 +8,8 @@ Maintainers must place that file here before running `scripts/publish.ps1`.
 The binary is ignored by Git and validated against the pinned SHA-256 before
 packaging. The pinned NVIDIA runtime files are kept in `DLSS Files`.
 
-Manager `1.1.1` includes release addon `1.1.1-dx11-neural-controls.1`, Windows file
-version `1.1.1.30`, with independent controls for each pass, colour 100% and sharpness
+Manager `1.1.2` includes release addon `1.1.2-integrated-feeder.1`, Windows file
+version `1.1.2.31`, with independent controls for each pass, colour 100% and sharpness
 0% defaults, shared sequential-pass scratch resources, and fence-drained admission
 when increasing passes. Compact native resolution controls remain available when
 scaled allocation fails, provided their smaller allocation fits safely. The nested-SR guard
@@ -30,6 +30,8 @@ game. Chained Temporal History is recommended and defaults on new configurations
 existing saved selections and the other motion modes are retained.
 The neutral first pass now participates in transition tracking, preventing later
 passes from staying on native fallback after changing the pass count at 100%.
+The integrated feeder supports manager-configured non-DLSS DX11/DX12 games. Its
+embedded duplicate overlay is disabled; all nine frame-delivery callbacks remain active.
 Encoding and Pass 1 Neural Detail and Colour values now restore separately per
 preset. Preset-scoped edge strength, thickness, softness, shift and visualization
 apply to Pass 2 and later. Multipass capture now waits for every bypassed pass so

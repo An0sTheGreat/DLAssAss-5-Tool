@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [v1.1.2] - 2026-09-21
+
 - Integrate DLSS5 Feeder into the add-on and gate it behind the manager's
   non-DLSS marker for supported 64-bit DX11/DX12 games.
 - Require ReShade's add-on build and standard shader package for non-DLSS setup;

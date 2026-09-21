@@ -31,7 +31,7 @@ public sealed class NonDlssSetupService
     private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromMinutes(2) };
     private readonly string _payloadDirectory;
 
-    static NonDlssSetupService() => Client.DefaultRequestHeaders.UserAgent.ParseAdd("DLAssAss5Tool/1.1.1");
+    static NonDlssSetupService() => Client.DefaultRequestHeaders.UserAgent.ParseAdd("DLAssAss5Tool/1.1.2");
 
     public NonDlssSetupService(string? payloadDirectory = null) =>
         _payloadDirectory = payloadDirectory ?? Path.Combine(AppContext.BaseDirectory, "Payload");

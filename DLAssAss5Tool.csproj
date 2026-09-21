@@ -9,8 +9,8 @@
     <RootNamespace>DLSS5ManAger</RootNamespace>
     <Product>DLAssAss 5 Tool</Product>
     <ApplicationIcon>assets\icon_dark.ico</ApplicationIcon>
-    <Version>1.1.1</Version>
-    <FileVersion>1.1.1.0</FileVersion>
+    <Version>1.1.2</Version>
+    <FileVersion>1.1.2.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
