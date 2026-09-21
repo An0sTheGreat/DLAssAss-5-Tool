@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Version 1.1.0** — [Download the Windows release](../../releases/tag/v1.1.0)
+**Version 1.1.1** — [Download the Windows release](../../releases/tag/v1.1.1)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
@@ -39,8 +39,9 @@ API support does not guarantee correct results in every game. The included addon
 duplicate NR processing through nested callbacks; this is not a universal
 Frame Generation compatibility guarantee.
 
-**Known issues:** Cyberpunk shimmering remains unresolved; this release fixes a
-separate pass-transition/control failure, not the shimmering itself. BOTDW may
+**Known issues:** DX11 Present-hook motion-related flickering remains unresolved;
+this release fixes separate pass-transition/control failures, not the flickering
+itself. BOTDW may
 freeze after alt-tabbing or leaving it unfocused,
 then toggling NR or changing settings. This remains unresolved; see the deferred
 [BOTDW Freeze Plan](docs/BOTDW_FREEZE_PLAN.md).
@@ -80,10 +81,10 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   Rendering Resolution stages 100% and still requires **Apply**.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.1.0.23** (manager file version **1.1.0.0**).
+  shows addon file version **1.1.1.30** (manager file version **1.1.1.0**).
 
-These image controls are available in DX12 games and in DX11 games after the
-official DX11 bridge supplies a tracked DX12 evaluation. Vulkan scope is unchanged.
+These image controls are available in DX12 and supported DX11 games. The add-on
+does not require the external DLSS 5 Bridge. Vulkan scope is unchanged.
 If safe working resources are unavailable, the addon retains native output.
 
 Upgrading the tool does not automatically update installed games. Close the game,
@@ -98,21 +99,22 @@ and presets are kept.
 Compatible sequential passes share a scratch working set while keeping source
 views separate and fence-owned. Compact native-resolution controls can recover
 after temporary allocation failure; the menu reports effective resolution when
-it differs from the request. The 512 MiB cache cap, VRAM reserve and safe fallback
-remain. Genuine resource exhaustion can still temporarily bypass controls.
+it differs from the request. The cache remains 512 MiB when memory information is
+unavailable and may grow to 1 GiB only when DXGI confirms safe headroom. The VRAM
+reserve remains. Genuine resource exhaustion can still temporarily bypass controls.
 
-Bridge-backed DX11 sessions retain same-generation pooled resources while Neural
-Rendering is active. Valid native features that remain in host slots are also
-retained across stream generations. Reducing the pass count therefore avoids live
-NVIDIA feature release and keeps reusable pass resources available.
+DX11 sessions retain same-generation pooled resources while Neural Rendering is
+active. Valid native features that remain in host slots are also retained across
+stream generations. Reducing the pass count therefore avoids live NVIDIA feature
+release and keeps reusable pass resources available.
 
 At 100% with neutral Pass 1, changing the pass count previously left later passes
 on native fallback. The first pass now participates in complete-group transition
 tracking, allowing additional-pass controls to resume. Sharpening stays independent
 of transfer, and interrupted dependent history resets on managed recovery.
 
-See [v1.1.0 release notes and validation](docs/MANAGER_1_1_0_RELEASE.md).
-These changes do not establish that Cyberpunk shimmer is fixed or guarantee
+See [v1.1.1 release notes and validation](docs/MANAGER_1_1_1_RELEASE.md).
+These changes do not establish that DX11 Present-hook flickering is fixed or guarantee
 correct output in every game. Experimental API support is unchanged.
 
 PLAY pulses fully between green and gray only when the selected game has both

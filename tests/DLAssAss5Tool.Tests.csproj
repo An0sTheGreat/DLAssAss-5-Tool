@@ -15,7 +15,6 @@
     <Compile Include="..\Core\GameAnalyzer.cs" Link="Core\GameAnalyzer.cs" />
     <Compile Include="..\Core\GameScanner.cs" Link="Core\GameScanner.cs" />
     <Compile Include="..\Core\InstallerService.cs" Link="Core\InstallerService.cs" />
-    <Compile Include="..\Core\Dlss5BridgeService.cs" Link="Core\Dlss5BridgeService.cs" />
     <Compile Include="..\Core\CoverArtService.cs" Link="Core\CoverArtService.cs" />
     <Compile Include="..\Core\ReShadeService.cs" Link="Core\ReShadeService.cs" />
   </ItemGroup>

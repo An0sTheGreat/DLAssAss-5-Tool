@@ -1,5 +1,16 @@
 # Changelog
 
+## [v1.1.1] - 2026-09-20
+
+- Remove the external DLSS 5 Bridge prompt, download, and installation workflow.
+  Existing bridge files in game folders are left untouched.
+- Bundle addon 1.1.1.30 with restored live Neural Transfer, Neural Colour, and
+  pass-count changes in supported DX11 games.
+- Refresh reused private-DX12 command-list identities and retain compatible
+  working sets across DX11 pass transitions.
+- Allow the addon cache to grow from 512 MiB to 1 GiB only when DXGI confirms
+  sufficient safe VRAM headroom, preventing false Skyrim multipass failures.
+
 ## [v1.1.0] - 2026-09-19
 
 - Prompt DX11 users during interactive add-on installation to download and
