@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 $managerRoot = Split-Path -Parent $PSScriptRoot
 $sourceAddon = Join-Path $managerRoot "Payload\renodx-dlss5-super-anus.addon64"
-$expectedAddonHash = "8F5C9D481AEF47EBB81EA0DD88884BB0CAA2A83B1002B4D8C177DB04611DCEF8"
+$expectedAddonHash = "51E1CAAEA90C81AE28A7F6228DDA851E1E72E876C07642C32C7BB7F6CBEFA971"
 $expectedDllHashes = @{
     "nvngx_dlss.dll" = "3975567B8943C53ACCE397F2B72380092F84F162D00B0D2C7D08A1025C563983"
     "nvngx_dlssg.dll" = "FF6E90EB78B827927DFF5B4ECC6B1C870C2E9BCA29ED9F48C7D348CC9E170B82"

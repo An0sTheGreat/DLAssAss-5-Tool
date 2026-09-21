@@ -13,8 +13,8 @@
   always open official Setup for interactive package selection.
 - Keep legacy non-DLSS games on the integrated-feed path when their DLSS SR DLL
   came from the manager, and identify incomplete feed setup as needing repair.
-- Defer integrated-feeder ReShade configuration until effect-runtime startup so
-  games such as Skyrim register the feed callbacks instead of failing DLL initialization.
+- Defer integrated-feeder ReShade configuration until effect-runtime startup, then
+  bind its callbacks explicitly to the verified local ReShade module in games such as Skyrim.
 
 ## [v1.1.1] - 2026-09-20
 
