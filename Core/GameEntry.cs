@@ -24,6 +24,13 @@ public sealed class GameEntry : INotifyPropertyChanged
     public bool HasDlss { get; set; }
     public bool HasDlssG { get; set; }
     public bool HasDlssNr { get; set; }
+    public bool UsesIntegratedFeeder { get; set; }
+    public bool Is64Bit { get; set; }
+    public bool RequiresIntegratedFeeder => UsesIntegratedFeeder || !HasDlss;
+    public bool SupportsIntegratedFeeder => Is64Bit && GraphicsApi
+        .Split('/', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+        .Any(api => api.Equals("DX11", StringComparison.OrdinalIgnoreCase) ||
+                    api.Equals("DX12", StringComparison.OrdinalIgnoreCase));
     public string? SteamAppId { get; set; }
     public bool IsHidden
     {
@@ -58,7 +65,7 @@ public sealed class GameEntry : INotifyPropertyChanged
         : "INSTALL RESHADE";
     public string AddonLabel => HasAddon ? "Installed" : "Not installed";
     public string AddonActionLabel => HasAddon ? "REINSTALL" : "INSTALL";
-    public string DlssLabel => string.Join(" / ", new[]
+    public string DlssLabel => UsesIntegratedFeeder ? "Integrated Feed" : string.Join(" / ", new[]
     {
         HasDlss ? "SR" : null,
         HasDlssG ? "FG" : null,
@@ -72,7 +79,8 @@ public sealed class GameEntry : INotifyPropertyChanged
         new("Add-on", HasAddon),
         new("DLSS SR", HasDlss),
         new("DLSS FG", HasDlssG),
-        new("DLSS NR", HasDlssNr)
+        new("DLSS NR", HasDlssNr),
+        new("Integrated Feed", UsesIntegratedFeeder)
     ];
 
     public event PropertyChangedEventHandler? PropertyChanged;

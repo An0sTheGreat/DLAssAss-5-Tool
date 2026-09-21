@@ -77,7 +77,7 @@ public sealed class ReShadeService
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
                 throw new InvalidOperationException($"ReShade Setup {release.Version} exited with code {process.ExitCode}.");
-            if (installMode == ReShadeInstallMode.InteractivePackages && !game.HasReShade &&
+            if (installMode == ReShadeInstallMode.InteractivePackages &&
                 !InstallationPresent(executablePath, graphicsApi))
                 throw new OperationCanceledException("ReShade Setup closed without installing ReShade.");
             // Keep successful reinstall backups for manual recovery.

@@ -65,6 +65,8 @@ public sealed class GameAnalyzer
             executableDirectory is not null && Directory.Exists(Path.Combine(executableDirectory, "reshade-shaders")) ||
             reshadeModules.Length > 0;
         var expectedProxy = ReShadeService.ExpectedProxyName(graphicsApi);
+        var usesIntegratedFeeder = executableDirectory is not null &&
+            HasEnabledSetting(Path.Combine(executableDirectory, "dlss5-feed.cfg"), "managed_non_dlss");
 
         var game = new GameEntry
         {
@@ -79,6 +81,8 @@ public sealed class GameAnalyzer
             HasDlss = installNames.Contains("nvngx_dlss.dll"),
             HasDlssG = installNames.Contains("nvngx_dlssg.dll"),
             HasDlssNr = installNames.Contains("nvngx_dlssnr.dll"),
+            UsesIntegratedFeeder = usesIntegratedFeeder,
+            Is64Bit = Is64BitExecutable(executables.FirstOrDefault()),
             SteamAppId = FindSteamAppId(fullPath),
             GraphicsApi = graphicsApi
         };
@@ -89,11 +93,36 @@ public sealed class GameAnalyzer
         {
             game.ExecutablePath is null ? "No game executable found" : Path.GetFileName(game.ExecutablePath),
             hasReShade ? "ReShade detected" : "ReShade not detected",
-            game.HasDlss ? "DLSS SR" : "No DLSS SR",
+            usesIntegratedFeeder ? "Integrated DLSS 5 Feed" : game.HasDlss ? "DLSS SR" : "No DLSS SR",
             game.HasDlssG ? "DLSS FG" : "No DLSS FG",
             game.HasDlssNr ? "DLSS NR" : "No DLSS NR"
         });
         return game;
+    }
+
+    internal static bool HasEnabledSetting(string path, string key)
+    {
+        try
+        {
+            return File.ReadLines(path).Any(line =>
+            {
+                var parts = line.Split('=', 2, StringSplitOptions.TrimEntries);
+                return parts.Length == 2 && parts[0].Equals(key, StringComparison.OrdinalIgnoreCase) &&
+                    parts[1].Equals("1", StringComparison.OrdinalIgnoreCase);
+            });
+        }
+        catch { return false; }
+    }
+
+    private static bool Is64BitExecutable(string? path)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path!);
+            using var reader = new PEReader(stream);
+            return reader.PEHeaders.CoffHeader.Machine == Machine.Amd64;
+        }
+        catch { return false; }
     }
 
     private static List<string> DetectApis(HashSet<string> names, IEnumerable<string> executables, IEnumerable<string> files)

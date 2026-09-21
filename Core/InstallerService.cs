@@ -23,6 +23,8 @@ public sealed class InstalledFile
     public string InstalledHash { get; set; } = "";
 }
 
+public sealed record InstallSource(string SourcePath, string TargetName);
+
 public sealed class InstallerService
 {
     public const string AddonName = "renodx-dlss5-super-anus.addon64";
@@ -38,19 +40,45 @@ public sealed class InstallerService
         _payloadDirectory = payloadDirectory ?? Path.Combine(AppContext.BaseDirectory, "Payload");
     }
 
-    public InstallResult Install(string executablePath, string dlssDirectory, bool includeDlssFiles)
+    public InstallResult Install(string executablePath, string dlssDirectory, bool includeDlssFiles,
+        IEnumerable<InstallSource>? additionalFiles = null)
     {
         var addon = Path.Combine(_payloadDirectory, AddonName);
         if (!File.Exists(addon))
             return Fail($"Manager payload is missing: {addon}");
+        var sources = new List<InstallSource> { new(addon, AddonName) };
+        if (includeDlssFiles)
+        {
+            var missing = RequiredDlssFiles.Where(name => !File.Exists(Path.Combine(dlssDirectory, name))).ToArray();
+            if (missing.Length > 0) return Fail("Required bundled DLSS files are missing: " + string.Join(", ", missing));
+            sources.AddRange(RequiredDlssFiles.Select(name => new InstallSource(Path.Combine(dlssDirectory, name), name)));
+        }
+        if (additionalFiles is not null) sources.AddRange(additionalFiles);
+        return InstallFiles(executablePath, sources);
+    }
+
+    public InstallResult ConfigureNonDlss(string executablePath, IEnumerable<InstallSource> files) =>
+        InstallFiles(executablePath, files.ToArray());
+
+    private InstallResult InstallFiles(string executablePath, IReadOnlyCollection<InstallSource> sources)
+    {
         var gameDirectory = InstallDirectory(executablePath);
         if (gameDirectory is null) return Fail("The selected game executable does not exist.");
         if (!HasReShade(gameDirectory))
             return Fail("ReShade was not found beside the selected game executable. Install ReShade first.");
+        if (sources.Count == 0) return Fail("No files were selected for installation.");
 
-        var sources = new List<string> { addon };
-        if (includeDlssFiles)
-            sources.AddRange(RequiredDlssFiles.Select(name => Path.Combine(dlssDirectory, name)).Where(File.Exists));
+        try
+        {
+            foreach (var source in sources)
+            {
+                if (!File.Exists(source.SourcePath)) return Fail($"Installation source is missing: {source.SourcePath}");
+                _ = ResolveTarget(gameDirectory, source.TargetName);
+            }
+            if (sources.Select(source => source.TargetName).Distinct(StringComparer.OrdinalIgnoreCase).Count() != sources.Count)
+                return Fail("The installation contains duplicate target files.");
+        }
+        catch (Exception exception) { return Fail($"Invalid installation target: {exception.Message}"); }
 
         var backupDirectory = Path.Combine(_backupRoot, SafeName(gameDirectory),
             DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));
@@ -61,18 +89,17 @@ public sealed class InstallerService
         {
             foreach (var source in sources)
             {
-                var targetName = Path.GetFileName(source);
-                var target = Path.Combine(gameDirectory, targetName);
+                var target = ResolveTarget(gameDirectory, source.TargetName);
                 string? backupName = null;
                 if (File.Exists(target))
                 {
-                    backupName = targetName + ".original";
+                    backupName = $"{manifest.Files.Count:D3}.original";
                     File.Copy(target, Path.Combine(backupDirectory, backupName), true);
                 }
 
-                var installedFile = new InstalledFile { TargetName = targetName, BackupName = backupName };
+                var installedFile = new InstalledFile { TargetName = source.TargetName, BackupName = backupName };
                 manifest.Files.Add(installedFile);
-                ReplaceFile(source, target);
+                ReplaceFile(source.SourcePath, target);
                 installedFile.InstalledHash = Hash(target);
             }
 
@@ -119,9 +146,9 @@ public sealed class InstallerService
 
             foreach (var file in manifest.Files.AsEnumerable().Reverse())
             {
-                var target = Path.Combine(gameDirectory, file.TargetName);
+                var target = ResolveTarget(gameDirectory, file.TargetName);
                 if (file.BackupName is not null)
-                    ReplaceFile(Path.Combine(backupDirectory, file.BackupName), target);
+                    ReplaceFile(ResolveBackup(backupDirectory, file.BackupName), target);
                 else if (File.Exists(target) && Hash(target).Equals(file.InstalledHash, StringComparison.OrdinalIgnoreCase))
                     File.Delete(target);
                 else if (File.Exists(target))
@@ -143,9 +170,9 @@ public sealed class InstallerService
         {
             try
             {
-                var target = Path.Combine(manifest.GameDirectory, file.TargetName);
+                var target = ResolveTarget(manifest.GameDirectory, file.TargetName);
                 if (file.BackupName is not null)
-                    ReplaceFile(Path.Combine(backupDirectory, file.BackupName), target);
+                    ReplaceFile(ResolveBackup(backupDirectory, file.BackupName), target);
                 else if (File.Exists(target)) File.Delete(target);
             }
             catch { }
@@ -165,6 +192,24 @@ public sealed class InstallerService
         {
             if (File.Exists(temporary)) File.Delete(temporary);
         }
+    }
+
+    private static string ResolveTarget(string gameDirectory, string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
+            throw new InvalidDataException("Target paths must be relative to the game directory.");
+        var root = Path.GetFullPath(gameDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var target = Path.GetFullPath(Path.Combine(root, relativePath));
+        if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException($"Target escapes the game directory: {relativePath}");
+        return target;
+    }
+
+    private static string ResolveBackup(string backupDirectory, string backupName)
+    {
+        if (!Path.GetFileName(backupName).Equals(backupName, StringComparison.Ordinal))
+            throw new InvalidDataException("Backup manifest contains an invalid file name.");
+        return Path.Combine(backupDirectory, backupName);
     }
 
     private static string Hash(string path)

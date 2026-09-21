@@ -19,12 +19,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly InstallerService _installer;
     private readonly CoverArtService _coverArt;
     private readonly ReShadeService _reshade = new();
+    private readonly NonDlssSetupService _nonDlssSetup = new();
     private ManagerSettings _settings;
     private GameEntry? _selectedGame;
     private string _activity = "Ready";
     private string _logText = "";
     private string _dlssFilesDirectory;
-    private string _dlssStatusTitle = "Checking user-supplied DLLs…";
+    private string _dlssStatusTitle = "Checking bundled DLLs…";
     private string _dlssStatusColor = "#9BA4B3";
     private bool _dlssFilesConfirmed;
     private bool _isLibraryView;
@@ -337,11 +338,34 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (game is null) { Show("Select a game first."); return; }
         var targetDirectory = InstallerService.InstallDirectory(game.ExecutablePath);
         if (targetDirectory is null) { Show("The selected game does not have a usable executable."); return; }
+        if (game.RequiresIntegratedFeeder && !game.SupportsIntegratedFeeder)
+        {
+            Show("Integrated DLSS 5 Feed currently supports only 64-bit DX11 and DX12 games.", MessageBoxImage.Warning);
+            return;
+        }
+        var needsShaderPackage = game.RequiresIntegratedFeeder &&
+            (game.ReShadeModulePaths.Count == 0 || !NonDlssSetupService.HasRequiredShaders(game.ExecutablePath!));
+        var graphicsApi = needsShaderPackage ? SelectReShadeApi(game) : null;
+        if (needsShaderPackage && graphicsApi is null) return;
         if (!ThemedDialog.Confirm(this, game.HasAddon ? "Confirm reinstallation" : "Confirm installation",
-            $"{(game.HasAddon ? "Reinstall" : "Install")} the add-on and available validated user-supplied DLSS files beside the selected executable:\n\n{targetDirectory}\n\nExisting files are backed up; your settings are kept.")) return;
+            game.RequiresIntegratedFeeder
+                ? $"{(game.HasAddon ? "Reinstall" : "Install")} the add-on, bundled DLSS files, integrated DLSS 5 Feed, and Lumenite Kernel 2.0 beside the selected executable:\n\n{targetDirectory}\n\n{(needsShaderPackage ? "Official ReShade Setup will open. Select the standard shader package when prompted.\n\n" : "")}Existing files are backed up; your other settings are kept."
+                : $"{(game.HasAddon ? "Reinstall" : "Install")} the add-on and bundled DLSS files beside the selected executable:\n\n{targetDirectory}\n\nExisting files are backed up; your settings are kept.")) return;
 
-        await RunOperation("Installing…", () => _installer.Install(game.ExecutablePath!,
-            DlssFilesDirectory, true));
+        if (!game.RequiresIntegratedFeeder)
+        {
+            await RunOperation("Installing…", () => _installer.Install(game.ExecutablePath!, DlssFilesDirectory, true));
+            return;
+        }
+
+        if (needsShaderPackage)
+        {
+            Activity = "Installing ReShade + shaders…";
+            var reshade = await _reshade.InstallLatestAsync(game, graphicsApi!, ReShadeInstallMode.InteractivePackages);
+            AppendLog(reshade.Message);
+            if (!reshade.Success) { Show(reshade.Message, MessageBoxImage.Error); await RefreshGame(game); return; }
+        }
+        await InstallNonDlssFiles(game, true);
     }
 
     private async void UpdateAll_Click(object sender, RoutedEventArgs e)
@@ -419,27 +443,68 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var game = SelectedGame;
         if (game?.ExecutablePath is null) { Show("The selected game does not have a usable executable."); return; }
         if (!game.CanInstallReShade) return;
+        if (game.RequiresIntegratedFeeder && !game.SupportsIntegratedFeeder)
+        {
+            Show("Integrated DLSS 5 Feed currently supports only 64-bit DX11 and DX12 games.", MessageBoxImage.Warning);
+            return;
+        }
         const string reshadeOnly = "Install ReShade Only";
         const string reshadeWithShaders = "Install ReShade + Shaders";
-        var choice = ThemedDialog.Choose(this, "Choose ReShade installation",
-            "Choose how ReShade should be installed. ReShade Only uses the current automatic setup. ReShade + Shaders opens the official ReShade Setup so you can select the shader and add-on packages you want.",
-            [reshadeOnly, reshadeWithShaders]);
-        if (choice is null) return;
-        var installMode = choice == reshadeOnly
-            ? ReShadeInstallMode.ReShadeOnly
-            : ReShadeInstallMode.InteractivePackages;
+        var installMode = ReShadeInstallMode.InteractivePackages;
+        if (!game.RequiresIntegratedFeeder)
+        {
+            var choice = ThemedDialog.Choose(this, "Choose ReShade installation",
+                "Choose how ReShade should be installed. ReShade Only uses the current automatic setup. ReShade + Shaders opens the official ReShade Setup so you can select the shader and add-on packages you want.",
+                [reshadeOnly, reshadeWithShaders]);
+            if (choice is null) return;
+            installMode = choice == reshadeOnly ? ReShadeInstallMode.ReShadeOnly : ReShadeInstallMode.InteractivePackages;
+        }
         var graphicsApi = SelectReShadeApi(game);
         if (graphicsApi is null) return;
         if (!ThemedDialog.Confirm(this, game.HasReShade ? "Reinstall ReShade" : "Install ReShade",
-            $"Download and {(game.HasReShade ? "reinstall" : "install")} the latest official ReShade build with full add-on support for {graphicsApi} into:\n\n{game.ExecutablePath}\n\n{(installMode == ReShadeInstallMode.ReShadeOnly ? "No shaders will be downloaded." : "Official ReShade Setup will open so you can select shader and add-on packages before installation completes.")} Existing settings and presets are kept. The full add-on build is intended for single-player use.",
+            $"Download and {(game.HasReShade ? "reinstall" : "install")} the latest official ReShade build with full add-on support for {graphicsApi} into:\n\n{game.ExecutablePath}\n\n{(installMode == ReShadeInstallMode.ReShadeOnly ? "No shaders will be downloaded." : game.RequiresIntegratedFeeder ? "Official ReShade Setup will open. You MUST select the standard shader package. Lumenite Kernel 2.0 and DLSS 5 Feed will then be configured automatically." : "Official ReShade Setup will open so you can select shader and add-on packages before installation completes.")} Existing settings and presets are kept. The full add-on build is intended for single-player use.",
             MessageBoxImage.Warning)) return;
 
         Activity = "Checking the latest official ReShade release…";
         var result = await _reshade.InstallLatestAsync(game, graphicsApi, installMode);
         AppendLog(result.Message);
-        Show(result.Message, result.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
+        if (!result.Success || !game.RequiresIntegratedFeeder)
+            Show(result.Message, result.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
+        else
+        {
+            await InstallNonDlssFiles(game, false);
+            return;
+        }
         await RefreshGame(game);
     }
+
+    private async Task InstallNonDlssFiles(GameEntry game, bool includeAddon)
+    {
+        try
+        {
+            Activity = "Downloading and configuring Lumenite Kernel 2.0…";
+            using var setup = await _nonDlssSetup.PrepareAsync(game.ExecutablePath!);
+            var result = await Task.Run(() => includeAddon
+                ? _installer.Install(game.ExecutablePath!, DlssFilesDirectory, true, setup.Files)
+                : _installer.ConfigureNonDlss(game.ExecutablePath!, setup.Files));
+            AppendLog(result.Message);
+            if (!result.Success) Show(result.Message, MessageBoxImage.Error);
+            else ShowRequiredShaderOrder();
+        }
+        catch (Exception exception)
+        {
+            var message = "Non-DLSS setup failed: " + exception.Message;
+            AppendLog(message);
+            Show(message, MessageBoxImage.Error);
+        }
+        await RefreshGame(game);
+    }
+
+    private void ShowRequiredShaderOrder() => ThemedDialog.Show(this, "REQUIRED RESHADE STEP",
+        "Open ReShade with Home and confirm these effects are enabled in this order:\n\n" +
+        "1. LUMENITE: Kernel 2.0\n" +
+        "2. DLSS 5 Feed\n\n" +
+        "DLSS5_Feed.fx MUST be enabled below Lumenite.", MessageBoxImage.Warning);
 
     private string? SelectReShadeApi(GameEntry game)
     {
@@ -532,7 +597,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             DlssFileStatuses.Add(new DlssFileStatus(name, File.Exists(Path.Combine(DlssFilesDirectory, name))));
         var confirmed = DlssFileStatuses.All(status => status.Exists);
         DlssFilesConfirmed = confirmed;
-        DlssStatusTitle = confirmed ? "✓  User-supplied DLLs confirmed!" : "✕  User-supplied DLL mismatch:";
+        DlssStatusTitle = confirmed ? "✓  Bundled DLSS files ready" : "✕  Bundled DLSS file missing:";
         DlssStatusColor = confirmed ? "#76B900" : "#FF5F63";
     }
 

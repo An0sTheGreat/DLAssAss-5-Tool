@@ -24,8 +24,23 @@ The experimental DX11 bridge and the native-SR duplicate-return guard use
 Kageyu and other credited contributors. Its BSD-style license is retained in
 `licenses/MinHook.txt` and is also included with binary releases.
 
+## DLSS5 Feeder
+
+The integrated non-DLSS input provider incorporates
+[DLSS5 Feeder](https://github.com/artur-graniszewski/DLSS5-Feeder), distributed
+under the MIT License. The retained license is in `licenses/DLSS5-Feeder-MIT.txt`.
+
+## LumeniteFX
+
+LumeniteFX is not redistributed. For a supported non-DLSS installation, the
+manager downloads a pinned revision directly from the author's GitHub repository,
+verifies its SHA-256, and installs only the required Kernel 2.0 files. LumeniteFX
+remains subject to its author's license and terms.
+
 ## ReShade, NVIDIA, and other SDKs
 
 ReShade, Dear ImGui, the NVIDIA NGX/DLSS SDK, DirectX headers, and Vulkan headers
-are external build/runtime dependencies. They are not redistributed in this
-source repository. Consult each upstream project or SDK for its applicable terms.
+are external build/runtime dependencies. Binary release archives include the
+pinned DLSS runtime files documented in `DLSS Files/README.md`; the NR runtime is
+a modified community binary with an Authenticode hash mismatch. Consult each
+upstream project or SDK for its applicable terms.

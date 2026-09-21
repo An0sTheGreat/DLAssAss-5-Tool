@@ -17,5 +17,6 @@
     <Compile Include="..\Core\InstallerService.cs" Link="Core\InstallerService.cs" />
     <Compile Include="..\Core\CoverArtService.cs" Link="Core\CoverArtService.cs" />
     <Compile Include="..\Core\ReShadeService.cs" Link="Core\ReShadeService.cs" />
+    <Compile Include="..\Core\NonDlssSetupService.cs" Link="Core\NonDlssSetupService.cs" />
   </ItemGroup>
 </Project>

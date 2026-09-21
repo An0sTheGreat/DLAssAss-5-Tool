@@ -6,7 +6,7 @@ Release builds package the verified add-on as:
 
 Maintainers must place that file here before running `scripts/publish.ps1`.
 The binary is ignored by Git and validated against the pinned SHA-256 before
-packaging. NVIDIA DLLs never belong in this folder.
+packaging. The pinned NVIDIA runtime files are kept in `DLSS Files`.
 
 Manager `1.1.1` includes release addon `1.1.1-dx11-neural-controls.1`, Windows file
 version `1.1.1.30`, with independent controls for each pass, colour 100% and sharpness
@@ -35,4 +35,6 @@ preset. Preset-scoped edge strength, thickness, softness, shift and visualizatio
 apply to Pass 2 and later. Multipass capture now waits for every bypassed pass so
 the OFF image is a zero-pass comparison. Launch state is persistent, and the edge
 masking path has a complete bypass switch. Cyberpunk shimmering remains unresolved.
-SHA-256: `8F4858A8AF6992794E4C721AC13B5850714EEBDBA8E9E9B93884092603C699AA`.
+The integrated build also contains DLSS5 Feeder 1.16.0-beta.6 and is enabled
+only when the manager writes `managed_non_dlss=1` for a supported non-DLSS game.
+SHA-256: `A764CB6D4E0E7A52D7B6D6DF706C57FB3361900DCA264BA9CF8E2689B877B235`.

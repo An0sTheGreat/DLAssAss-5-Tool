@@ -82,12 +82,12 @@
                             <Border Background="#191D24" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
                                     CornerRadius="10" Padding="11" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="LOCAL-ONLY" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" />
-                                    <TextBlock Text="Place these files in the DLSS Files folder beside DLAssAss 5 Tool.exe:"
+                                    <TextBlock Text="BUNDLED DLSS RUNTIMES" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" />
+                                    <TextBlock Text="Release builds include these files:"
                                                Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
                                     <TextBlock Text="nvngx_dlss.dll&#x0a;nvngx_dlssg.dll&#x0a;nvngx_dlssnr.dll"
                                                Foreground="#E7EAF0" Margin="0,5,0,0" />
-                                    <TextBlock Text="They are never downloaded or bundled."
+                                    <TextBlock Text="The NR file is a modified community runtime; see the included notice."
                                                Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
                                 </StackPanel>
                             </Border>
@@ -486,8 +486,8 @@
                             <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}"
                                     BorderThickness="1" CornerRadius="10" Padding="18" Margin="0,0,0,12">
                                 <StackPanel>
-                                    <TextBlock Text="USER-SUPPLIED DLSS FILES" FontWeight="Bold" />
-                                    <TextBlock Text="Published builds include this folder and instructions, but no NVIDIA DLLs."
+                                    <TextBlock Text="BUNDLED DLSS FILES" FontWeight="Bold" />
+                                    <TextBlock Text="Published builds include the pinned runtime files. Browse only to use a different local set."
                                                Foreground="{StaticResource MutedBrush}" Margin="0,4,0,10" />
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Content="BROWSE" Click="BrowseDlss_Click" Margin="8,0,0,0" />

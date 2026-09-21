@@ -3,19 +3,20 @@
 **Version 1.1.1** — [Download the Windows release](../../releases/tag/v1.1.1)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
-DLSS 5 Super Anus ReShade add-on, supplying your own NVIDIA DLSS runtime files,
+DLSS 5 Super Anus ReShade add-on, its pinned DLSS runtime files,
 installing ReShade with add-on support, and safely restoring replaced files.
 
 ## Supported GPUs
 
 | GPU family | Status | Neural Rendering requirement |
 | --- | --- | --- |
-| ✅ GeForce RTX 50 Series | Supported | Official DLSS 5 Neural Rendering hardware. Supply a compatible `nvngx_dlssnr.dll`. |
-| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 40 Series | Experimental | Requires the community-patched `nvngx_dlssnr.dll` available from the RenoDX Discord server. |
-| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 30 Series | Experimental | Requires the community-patched `nvngx_dlssnr.dll` available from the RenoDX Discord server. |
+| ✅ GeForce RTX 50 Series | Supported | Official DLSS 5 Neural Rendering hardware. |
+| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 40 Series | Experimental | Uses the bundled modified community `nvngx_dlssnr.dll`. |
+| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 30 Series | Experimental | Uses the bundled modified community `nvngx_dlssnr.dll`. |
 
-The RTX 30/40 runtime patch is unofficial, is not bundled or downloaded by this
-project, and cannot guarantee compatibility with every game, driver or GPU.
+The bundled `nvngx_dlssnr.dll` is a modified community runtime and does not have
+a valid NVIDIA Authenticode signature. It is not an official NVIDIA build and
+cannot guarantee compatibility with every game, driver, or GPU.
 These statuses apply to DLSS 5 Neural Rendering; other DLSS features have their
 own hardware requirements.
 
@@ -33,6 +34,12 @@ Neural Rendering support.
 | ❌ DirectX 10 | No | No native Neural Rendering backend. |
 | ❌ DirectX 9 | No | No native Neural Rendering backend. |
 | ❌ OpenGL | No | No native Neural Rendering backend. |
+
+For detected non-DLSS games, the manager enables the integrated DLSS5 Feeder on
+64-bit DX11/DX12 only. It requires the official ReShade full add-on build and
+standard shader package. The manager downloads the pinned LumeniteFX source from
+its author's GitHub repository, verifies its SHA-256, installs Kernel 2.0, and
+configures `DLSS5_MV_PROVIDER=3` automatically.
 
 API support does not guarantee correct results in every game. The included addon:
 **General frame-gen flickering fixes improved.** The included addon prevents
@@ -137,8 +144,9 @@ repository.
 - Explicit API selection for games supporting multiple graphics APIs
 - Installation of the latest official ReShade build with add-on support, either
   automatically without shaders or interactively with selected packages
-- One-click installation of the bundled add-on and validated user-supplied DLSS
-  files
+- One-click installation of the bundled add-on and pinned DLSS runtime files
+- Automatic integrated feeder, Lumenite Kernel 2.0, and ReShade preset setup for
+  detected non-DLSS 64-bit DX11/DX12 games
 - Per-game backups and one-click restoration of the latest installation
 - Game launching, folder access, renaming, hiding, and persistent view settings
 - Steam and GOG cover lookup with executable-icon fallback and local caching
@@ -147,18 +155,16 @@ repository.
 
 - 64-bit Windows 10 or Windows 11
 - A game supported by the included ReShade add-on
-- NVIDIA DLSS DLLs supplied by the user
-- Internet access for ReShade version checks and game-cover discovery
+- Internet access for ReShade, LumeniteFX, and game-cover discovery
 
-The tool does not download or redistribute NVIDIA DLLs.
+Release archives include the pinned DLLs listed in `DLSS Files/README.md`.
 
 ## Installation
 
 1. Download `DLAssAss-5-Tool-win-x64.zip` from
    [GitHub Releases](../../releases/latest).
 2. Extract the complete archive to a writable folder.
-3. Open the included `DLSS Files` folder.
-4. Add the NVIDIA DLLs you are legally permitted to use:
+3. The included `DLSS Files` folder contains:
 
    | File | Purpose |
    | --- | --- |
@@ -166,8 +172,7 @@ The tool does not download or redistribute NVIDIA DLLs.
    | `nvngx_dlssg.dll` | DLSS Frame Generation |
    | `nvngx_dlssnr.dll` | DLSS Ray Reconstruction / Neural Rendering |
 
-5. Start `DLAssAss 5 Tool.exe`. The status bar confirms each valid DLL and
-   identifies missing or mismatched files.
+4. Start `DLAssAss 5 Tool.exe`. The status bar confirms the bundled files are present.
 
 ## Using the tool
 
@@ -176,11 +181,16 @@ The tool does not download or redistribute NVIDIA DLLs.
 2. Select a game in Library View or Folder View.
 3. Review the detected executable, graphics API, ReShade state, add-on state,
    and available DLSS features.
-4. If ReShade is missing, select **Install ReShade**, choose ReShade Only or
-   ReShade + Shaders, then choose the intended API for a multi-API game.
-5. Select **Install** to install the included add-on and every validated DLSS
-   DLL currently available in `DLSS Files` beside the selected game executable.
+4. For native-DLSS games, install ReShade in either mode. For non-DLSS games,
+   the tool requires ReShade + Shaders and prompts you to select the standard
+   shader package in official ReShade Setup.
+5. Select **Install** to install the add-on and bundled DLSS DLLs. Non-DLSS
+   64-bit DX11/DX12 games are also configured with Lumenite Kernel 2.0 and DLSS 5 Feed.
 6. Select **Play** to launch the detected game executable.
+
+After non-DLSS setup, open ReShade with **Home** and confirm **DLSS 5 Feed** is
+enabled immediately below **LUMENITE: Kernel 2.0**. This order is required; the
+motion-vector provider is already configured by the tool.
 
 ReShade installation uses the latest official full add-on build available from
 `reshade.me` and configures the selected API. ReShade Only installs no shaders;
@@ -203,7 +213,8 @@ so upgrades preserve existing game libraries and backups.
 - Graphics API detection is evidence-based. Confirm the selected API when a game
   offers multiple renderers.
 - Cover lookup may require a few moments after initial game discovery.
-- NVIDIA DLLs in `DLSS Files` and add-on payload binaries are ignored by Git.
+- The bundled NR runtime is modified community software; review the included
+  hashes and notices before use.
 
 ## Building from source
 
@@ -214,15 +225,16 @@ dotnet build .\DLAssAss5Tool.csproj -c Release
 dotnet run --project .\tests\DLAssAss5Tool.Tests.csproj -c Release
 ```
 
-To create a self-contained release, place the verified
-`renodx-dlss5-super-anus.addon64` in `Payload`, then run:
+To create a self-contained release, place the verified add-on in `Payload` and
+the three pinned runtime DLLs in `DLSS Files`, then run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\publish.ps1
 ```
 
-The publisher refuses to include NVIDIA DLLs and validates the add-on payload
-against its pinned SHA-256 before creating the archive.
+The publisher validates the add-on and all three runtime DLLs against pinned
+SHA-256 values, includes them in the archive, and writes all release output to
+the workspace-level `artifacts` folder.
 
 Public releases use two paired repositories: this repository publishes the
 complete manager application, while `DLSS-5-Super-Anus-Manual` publishes only

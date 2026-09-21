@@ -20,19 +20,24 @@ try
     File.WriteAllText(Path.Combine(root, "steamapps", "appmanifest_123.acf"),
         "\"AppState\" { \"appid\" \"123\" \"installdir\" \"Game\" }");
     File.WriteAllText(Path.Combine(installDirectory, "ReShade.ini"), "[GENERAL]");
+    File.WriteAllText(Path.Combine(installDirectory, "dlss5-feed.cfg"), "managed_non_dlss = 1\n");
     File.Copy(Environment.ProcessPath!, executable);
     File.AppendAllText(executable, "d3d12.dll");
     File.WriteAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll"), "original");
     File.WriteAllText(Path.Combine(game, InstallerService.AddonName), "misplaced");
     File.WriteAllText(Path.Combine(game, "nvngx_dlssg.dll"), "misplaced");
     File.WriteAllText(Path.Combine(payload, InstallerService.AddonName), "addon");
-    File.WriteAllText(Path.Combine(dlss, "nvngx_dlssnr.dll"), "replacement");
+    foreach (var name in InstallerService.RequiredDlssFiles)
+        File.WriteAllText(Path.Combine(dlss, name), name == "nvngx_dlssnr.dll" ? "replacement" : name);
 
     var analyzer = new GameAnalyzer();
     var scanner = new GameScanner();
     var service = new InstallerService(backups, payload);
     var analysis = analyzer.Analyze(game);
     Require(analysis.HasReShade, "ReShade detection failed.");
+    Require(analysis.UsesIntegratedFeeder && analysis.RequiresIntegratedFeeder && analysis.SupportsIntegratedFeeder,
+        "Managed non-DLSS feeder detection failed.");
+    Require(analysis.Is64Bit, "64-bit executable detection failed.");
     Require(!analysis.HasAddon && !analysis.HasDlssG, "Files away from the selected executable were treated as installed.");
     Require(analysis.IconSource is not null, "Executable icon extraction failed.");
     Require(analysis.GraphicsApi.Contains("DX12"), "Executable API detection failed.");
@@ -75,6 +80,21 @@ try
     Require(ReShadeService.ResolveInstallerApi("DX12 / DX11") is null &&
         ReShadeService.SupportedGraphicsApis("DX12 / DX11").SequenceEqual(["DX12", "DX11"]),
         "Multi-API games must require an explicit supported API selection.");
+    var reshadeIni = NonDlssSetupService.BuildReShadeIni(
+        "[GENERAL]\nPreprocessorDefinitions=KEEP=1,DLSS5_MV_PROVIDER=1\nEffectSearchPaths=.\\existing\n");
+    Require(reshadeIni.Contains("KEEP=1,DLSS5_MV_PROVIDER=3") &&
+        reshadeIni.Contains(@".\reshade-shaders\Shaders") &&
+        !reshadeIni.Contains("DLSS5_MV_PROVIDER=1"), "Global feed preprocessor configuration failed.");
+    var preset = NonDlssSetupService.BuildPreset(
+        "Techniques=Existing@Other.fx,DLSS5_Feed@DLSS5_Feed.fx\nTechniqueSorting=Sorted@Other.fx\n");
+    Require(preset.IndexOf("Lumenite_Kernel@lumenite_Kernel.fx", StringComparison.Ordinal) <
+        preset.IndexOf("DLSS5_Feed@DLSS5_Feed.fx", StringComparison.Ordinal) &&
+        preset.Contains("TechniqueSorting=Sorted@Other.fx,Lumenite_Kernel@lumenite_Kernel.fx,DLSS5_Feed@DLSS5_Feed.fx") &&
+        preset.Contains("[DLSS5_Feed.fx]") && preset.Contains("PreprocessorDefinitions=DLSS5_MV_PROVIDER=3"),
+        "Required Lumenite/feed order or provider configuration failed.");
+    Require(NonDlssSetupService.BuildFeedConfig("enabled=0\n").Contains("managed_non_dlss=1") &&
+        NonDlssSetupService.ResolvePresetTarget(installDirectory, @"..\escape.ini") == "ReShadePreset.ini",
+        "Managed feeder marker or preset path containment failed.");
     var store = new AppStore(Path.Combine(root, "Store"));
     var customArt = Path.Combine(root, "custom-art.png");
     var encoder = new PngBitmapEncoder();
@@ -112,6 +132,15 @@ try
         loaded.WindowHeight == 720 && loaded.WindowMaximized, "Window placement was not persisted.");
     var installedBridge = Path.Combine(installDirectory, "dlss5-bridge.addon64");
     File.WriteAllText(installedBridge, "old bridge");
+    var stagedShader = Path.Combine(root, "staged.fx");
+    File.WriteAllText(stagedShader, "shader");
+    Require(!service.ConfigureNonDlss(executable, [new(stagedShader, @"..\escape.fx")]).Success,
+        "Installer accepted a target outside the game directory.");
+    var nestedShader = Path.Combine("reshade-shaders", "Shaders", "nested.fx");
+    Require(service.ConfigureNonDlss(executable, [new(stagedShader, nestedShader)]).Success &&
+        File.Exists(Path.Combine(installDirectory, nestedShader)), "Nested transactional installation failed.");
+    Require(service.RestoreLatest(executable).Success && !File.Exists(Path.Combine(installDirectory, nestedShader)),
+        "Nested transactional restore failed.");
     Require(service.Install(executable, dlss, true).Success, "Install failed.");
     Require(File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == "replacement", "DLSS replacement failed.");
     Require(File.Exists(Path.Combine(installDirectory, InstallerService.AddonName)), "Add-on was not installed beside the executable.");

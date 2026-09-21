@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Integrate DLSS5 Feeder into the add-on and gate it behind the manager's
+  non-DLSS marker for supported 64-bit DX11/DX12 games.
+- Require ReShade's add-on build and standard shader package for non-DLSS setup;
+  download and verify pinned LumeniteFX Kernel 2.0 files, enable Kernel then
+  DLSS 5 Feed, and configure motion-vector provider 3 automatically.
+- Bundle and hash-check the three pinned DLSS runtime files in future builds.
+  The modified community `nvngx_dlssnr.dll` is labeled explicitly.
+
 ## [v1.1.1] - 2026-09-20
 
 - Remove the external DLSS 5 Bridge prompt, download, and installation workflow.

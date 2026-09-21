@@ -20,6 +20,9 @@
     <Resource Include="assets\icon_dark.png" />
     <Resource Include="assets\logo_light.png" />
     <Content Include="DLSS Files\README.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="DLSS Files\*.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Payload\README.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Payload\DLSS5_Feed.fx" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Payload\*.addon64" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
