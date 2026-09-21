@@ -15,6 +15,8 @@
   came from the manager, and identify incomplete feed setup as needing repair.
 - Defer integrated-feeder configuration until effect-runtime startup and bind its
   ReShade callbacks, configuration and logging directly to the verified local module.
+- Disable the integrated feeder's duplicate overlay, preventing a crash when Home
+  opens ReShade while retaining all nine feeder callbacks and frame delivery.
 
 ## [v1.1.1] - 2026-09-20
 
