@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Reflection.PortableExecutable;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Interop;
@@ -12,6 +13,8 @@ namespace DLSS5ManAger.Core;
 
 public sealed class GameAnalyzer
 {
+    private readonly string? _backupRoot;
+
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr ExtractAssociatedIcon(IntPtr instance, StringBuilder iconPath, ref ushort iconIndex);
 
@@ -40,6 +43,8 @@ public sealed class GameAnalyzer
     private static readonly Regex AppIdPattern = new("\"appid\"\\s+\"(?<value>\\d+)\"", RegexOptions.IgnoreCase);
     private static readonly Regex InstallDirPattern = new("\"installdir\"\\s+\"(?<value>[^\"]+)\"", RegexOptions.IgnoreCase);
 
+    public GameAnalyzer(string? backupRoot = null) => _backupRoot = backupRoot;
+
     public GameEntry Analyze(string directory)
     {
         var fullPath = DirectoryPath.Normalize(directory);
@@ -67,6 +72,10 @@ public sealed class GameAnalyzer
         var expectedProxy = ReShadeService.ExpectedProxyName(graphicsApi);
         var usesIntegratedFeeder = executableDirectory is not null &&
             HasEnabledSetting(Path.Combine(executableDirectory, "dlss5-feed.cfg"), "managed_non_dlss");
+        var hasIntegratedFeederSetup = executableDirectory is not null &&
+            File.Exists(Path.Combine(executableDirectory, "reshade-shaders", "Shaders", "DLSS5_Feed.fx")) &&
+            File.Exists(Path.Combine(executableDirectory, "reshade-shaders", "Shaders", "lumenite_Kernel.fx"));
+        var wasDlssAddedByManager = WasDlssAddedByManager(executableDirectory);
 
         var game = new GameEntry
         {
@@ -82,6 +91,8 @@ public sealed class GameAnalyzer
             HasDlssG = installNames.Contains("nvngx_dlssg.dll"),
             HasDlssNr = installNames.Contains("nvngx_dlssnr.dll"),
             UsesIntegratedFeeder = usesIntegratedFeeder,
+            HasIntegratedFeederSetup = hasIntegratedFeederSetup,
+            WasDlssAddedByManager = wasDlssAddedByManager,
             Is64Bit = Is64BitExecutable(executables.FirstOrDefault()),
             SteamAppId = FindSteamAppId(fullPath),
             GraphicsApi = graphicsApi
@@ -93,11 +104,39 @@ public sealed class GameAnalyzer
         {
             game.ExecutablePath is null ? "No game executable found" : Path.GetFileName(game.ExecutablePath),
             hasReShade ? "ReShade detected" : "ReShade not detected",
-            usesIntegratedFeeder ? "Integrated DLSS 5 Feed" : game.HasDlss ? "DLSS SR" : "No DLSS SR",
+            usesIntegratedFeeder ? "Integrated DLSS 5 Feed"
+                : game.RequiresIntegratedFeeder && game.HasDlss ? "Integrated feed repair needed"
+                : game.HasDlss ? "DLSS SR" : "No DLSS SR",
             game.HasDlssG ? "DLSS FG" : "No DLSS FG",
             game.HasDlssNr ? "DLSS NR" : "No DLSS NR"
         });
         return game;
+    }
+
+    private bool WasDlssAddedByManager(string? gameDirectory)
+    {
+        if (_backupRoot is null || gameDirectory is null) return false;
+        try
+        {
+            var root = InstallerService.GameBackupDirectory(_backupRoot, gameDirectory);
+            if (!Directory.Exists(root)) return false;
+            foreach (var directory in Directory.EnumerateDirectories(root).OrderBy(path => path))
+            {
+                try
+                {
+                    var manifest = JsonSerializer.Deserialize<InstallManifest>(
+                        File.ReadAllText(Path.Combine(directory, "manifest.json")));
+                    if (manifest is null || !DirectoryPath.Comparer.Equals(
+                            DirectoryPath.Normalize(manifest.GameDirectory), DirectoryPath.Normalize(gameDirectory))) continue;
+                    var dlss = manifest.Files.FirstOrDefault(file =>
+                        file.TargetName.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase));
+                    if (dlss is not null) return dlss.BackupName is null;
+                }
+                catch { }
+            }
+        }
+        catch { }
+        return false;
     }
 
     internal static bool HasEnabledSetting(string path, string key)

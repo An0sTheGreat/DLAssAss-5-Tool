@@ -25,8 +25,11 @@ public sealed class GameEntry : INotifyPropertyChanged
     public bool HasDlssG { get; set; }
     public bool HasDlssNr { get; set; }
     public bool UsesIntegratedFeeder { get; set; }
+    public bool HasIntegratedFeederSetup { get; set; }
+    public bool WasDlssAddedByManager { get; set; }
     public bool Is64Bit { get; set; }
-    public bool RequiresIntegratedFeeder => UsesIntegratedFeeder || !HasDlss;
+    public bool RequiresIntegratedFeeder =>
+        UsesIntegratedFeeder || HasIntegratedFeederSetup || WasDlssAddedByManager || !HasDlss;
     public bool SupportsIntegratedFeeder => Is64Bit && GraphicsApi
         .Split('/', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
         .Any(api => api.Equals("DX11", StringComparison.OrdinalIgnoreCase) ||
@@ -65,7 +68,9 @@ public sealed class GameEntry : INotifyPropertyChanged
         : "INSTALL RESHADE";
     public string AddonLabel => HasAddon ? "Installed" : "Not installed";
     public string AddonActionLabel => HasAddon ? "REINSTALL" : "INSTALL";
-    public string DlssLabel => UsesIntegratedFeeder ? "Integrated Feed" : string.Join(" / ", new[]
+    public string DlssLabel => UsesIntegratedFeeder ? "Integrated Feed"
+        : RequiresIntegratedFeeder && HasDlss ? "Feed Repair Needed"
+        : string.Join(" / ", new[]
     {
         HasDlss ? "SR" : null,
         HasDlssG ? "FG" : null,
@@ -80,7 +85,8 @@ public sealed class GameEntry : INotifyPropertyChanged
         new("DLSS SR", HasDlss),
         new("DLSS FG", HasDlssG),
         new("DLSS NR", HasDlssNr),
-        new("Integrated Feed", UsesIntegratedFeeder)
+        new(!UsesIntegratedFeeder && RequiresIntegratedFeeder && HasDlss
+            ? "Integrated Feed (repair needed)" : "Integrated Feed", UsesIntegratedFeeder)
     ];
 
     public event PropertyChangedEventHandler? PropertyChanged;

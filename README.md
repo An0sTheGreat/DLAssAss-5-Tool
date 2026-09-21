@@ -97,11 +97,10 @@ If safe working resources are unavailable, the addon retains native output.
 Upgrading the tool does not automatically update installed games. Close the game,
 select it in the tool, and choose **Reinstall** to deploy the new bundled add-on.
 Existing libraries, settings, and backups retain their current storage location.
-**Install/Reinstall ReShade** offers ReShade Only, which uses Setup's automatic
-update operation without shader packages, or ReShade + Shaders, which opens the
-official Setup interface for shader and add-on package selection. Existing ReShade
-proxy backups are kept beside their originals as `.dlss5manager-*.bak`; settings
-and presets are kept.
+**Install/Reinstall ReShade** asks for confirmation, then opens the official Setup
+interface for shader and add-on package selection. Existing ReShade proxy backups
+are kept beside their originals as `.dlss5manager-*.bak`; settings and presets are
+kept.
 
 Compatible sequential passes share a scratch working set while keeping source
 views separate and fence-owned. Compact native-resolution controls can recover
@@ -142,8 +141,8 @@ repository.
 - Graphics API detection using ReShade logs, executable imports, runtime files,
   executable names, and bounded binary evidence
 - Explicit API selection for games supporting multiple graphics APIs
-- Installation of the latest official ReShade build with add-on support, either
-  automatically without shaders or interactively with selected packages
+- Interactive installation of the latest official ReShade build with add-on
+  support and selected packages
 - One-click installation of the bundled add-on and pinned DLSS runtime files
 - Automatic integrated feeder, Lumenite Kernel 2.0, and ReShade preset setup for
   detected non-DLSS 64-bit DX11/DX12 games
@@ -193,8 +192,8 @@ enabled immediately below **LUMENITE: Kernel 2.0**. This order is required; the
 motion-vector provider is already configured by the tool.
 
 ReShade installation uses the latest official full add-on build available from
-`reshade.me` and configures the selected API. ReShade Only installs no shaders;
-ReShade + Shaders opens official Setup for package selection.
+`reshade.me`, configures the selected API, and opens official Setup for package
+selection.
 
 ## Backups and restoration
 

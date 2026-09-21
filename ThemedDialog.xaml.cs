@@ -48,6 +48,8 @@ public partial class ThemedDialog : Window
         MessageBoxImage icon = MessageBoxImage.Question)
     {
         var dialog = new ThemedDialog(owner, title, message, icon);
+        dialog.PrimaryButton.Content = "YES";
+        dialog.CancelButton.Content = "NO";
         dialog.CancelButton.Visibility = Visibility.Visible;
         return dialog.ShowDialog() == true;
     }

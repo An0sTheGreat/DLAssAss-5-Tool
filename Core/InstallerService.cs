@@ -80,7 +80,7 @@ public sealed class InstallerService
         }
         catch (Exception exception) { return Fail($"Invalid installation target: {exception.Message}"); }
 
-        var backupDirectory = Path.Combine(_backupRoot, SafeName(gameDirectory),
+        var backupDirectory = Path.Combine(GameBackupDirectory(_backupRoot, gameDirectory),
             DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));
         var manifest = new InstallManifest { CreatedUtc = DateTimeOffset.UtcNow, GameDirectory = gameDirectory };
         Directory.CreateDirectory(backupDirectory);
@@ -131,7 +131,7 @@ public sealed class InstallerService
     {
         var gameDirectory = InstallDirectory(executablePath);
         if (gameDirectory is null) return Fail("The selected game executable does not exist.");
-        var gameBackupRoot = Path.Combine(_backupRoot, SafeName(gameDirectory));
+        var gameBackupRoot = GameBackupDirectory(_backupRoot, gameDirectory);
         var backupDirectory = Directory.Exists(gameBackupRoot)
             ? Directory.EnumerateDirectories(gameBackupRoot).OrderByDescending(path => path).FirstOrDefault()
             : null;
@@ -228,6 +228,9 @@ public sealed class InstallerService
         }
         catch { return null; }
     }
+
+    internal static string GameBackupDirectory(string backupRoot, string gameDirectory) =>
+        Path.Combine(backupRoot, SafeName(gameDirectory));
 
     private static bool HasReShade(string directory)
     {

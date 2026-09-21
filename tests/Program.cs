@@ -30,7 +30,7 @@ try
     foreach (var name in InstallerService.RequiredDlssFiles)
         File.WriteAllText(Path.Combine(dlss, name), name == "nvngx_dlssnr.dll" ? "replacement" : name);
 
-    var analyzer = new GameAnalyzer();
+    var analyzer = new GameAnalyzer(backups);
     var scanner = new GameScanner();
     var service = new InstallerService(backups, payload);
     var analysis = analyzer.Analyze(game);
@@ -144,6 +144,11 @@ try
     Require(service.Install(executable, dlss, true).Success, "Install failed.");
     Require(File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == "replacement", "DLSS replacement failed.");
     Require(File.Exists(Path.Combine(installDirectory, InstallerService.AddonName)), "Add-on was not installed beside the executable.");
+    File.WriteAllText(Path.Combine(installDirectory, "dlss5-feed.cfg"), "managed_non_dlss=0\n");
+    var legacyNonDlss = analyzer.Analyze(game);
+    Require(legacyNonDlss.WasDlssAddedByManager && legacyNonDlss.RequiresIntegratedFeeder &&
+        !legacyNonDlss.UsesIntegratedFeeder && legacyNonDlss.DlssLabel == "Feed Repair Needed",
+        "Manager-installed DLSS was mistaken for native game support.");
     Require(File.ReadAllText(installedBridge) == "old bridge", "Install modified an existing external DLSS 5 Bridge.");
     Require(File.ReadAllText(Path.Combine(game, InstallerService.AddonName)) == "misplaced", "Parent-folder files were modified.");
     Require(service.RestoreLatest(executable).Success, "Restore failed.");
@@ -194,8 +199,13 @@ try
     Require(mainWindowCode.Contains("Analyzing Games...") &&
         mainWindowCode.Contains("Updating Selected Games...") &&
         mainWindowCode.Contains("Installed 1 file(s)") &&
+        !mainWindowCode.Contains("Install ReShade Only") &&
+        mainWindowCode.Contains("ReShadeInstallMode.InteractivePackages") &&
         !mainWindowCode.Contains("DLSS 5 Bridge"),
         "Operation overlay text or concise update result text is missing.");
+    var dialogCode = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "ThemedDialog.xaml.cs"));
+    Require(dialogCode.Contains("PrimaryButton.Content = \"YES\"") &&
+        dialogCode.Contains("CancelButton.Content = \"NO\""), "Confirmation buttons must say Yes and No.");
     Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade modes, preferences, install, external-bridge preservation, addon-only update/refusal, backup, and restore");
 }
 finally

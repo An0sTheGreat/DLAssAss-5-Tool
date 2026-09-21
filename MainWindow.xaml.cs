@@ -15,7 +15,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private readonly AppStore _store = new();
     private readonly GameScanner _scanner = new();
-    private readonly GameAnalyzer _analyzer = new();
+    private readonly GameAnalyzer _analyzer;
     private readonly InstallerService _installer;
     private readonly CoverArtService _coverArt;
     private readonly ReShadeService _reshade = new();
@@ -57,6 +57,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public MainWindow()
     {
         _settings = _store.Load();
+        _analyzer = new GameAnalyzer(_store.BackupDirectory);
         _isLibraryView = _settings.IsLibraryView;
         InitializeComponent();
         RestoreWindowPlacement();
@@ -448,25 +449,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Show("Integrated DLSS 5 Feed currently supports only 64-bit DX11 and DX12 games.", MessageBoxImage.Warning);
             return;
         }
-        const string reshadeOnly = "Install ReShade Only";
-        const string reshadeWithShaders = "Install ReShade + Shaders";
-        var installMode = ReShadeInstallMode.InteractivePackages;
-        if (!game.RequiresIntegratedFeeder)
-        {
-            var choice = ThemedDialog.Choose(this, "Choose ReShade installation",
-                "Choose how ReShade should be installed. ReShade Only uses the current automatic setup. ReShade + Shaders opens the official ReShade Setup so you can select the shader and add-on packages you want.",
-                [reshadeOnly, reshadeWithShaders]);
-            if (choice is null) return;
-            installMode = choice == reshadeOnly ? ReShadeInstallMode.ReShadeOnly : ReShadeInstallMode.InteractivePackages;
-        }
         var graphicsApi = SelectReShadeApi(game);
         if (graphicsApi is null) return;
         if (!ThemedDialog.Confirm(this, game.HasReShade ? "Reinstall ReShade" : "Install ReShade",
-            $"Download and {(game.HasReShade ? "reinstall" : "install")} the latest official ReShade build with full add-on support for {graphicsApi} into:\n\n{game.ExecutablePath}\n\n{(installMode == ReShadeInstallMode.ReShadeOnly ? "No shaders will be downloaded." : game.RequiresIntegratedFeeder ? "Official ReShade Setup will open. You MUST select the standard shader package. Lumenite Kernel 2.0 and DLSS 5 Feed will then be configured automatically." : "Official ReShade Setup will open so you can select shader and add-on packages before installation completes.")} Existing settings and presets are kept. The full add-on build is intended for single-player use.",
+            $"Do you want to {(game.HasReShade ? "reinstall" : "install")} the latest official ReShade build with full add-on support for {graphicsApi} into:\n\n{game.ExecutablePath}\n\n{(game.RequiresIntegratedFeeder ? "Official ReShade Setup will open. You MUST select the standard shader package. Lumenite Kernel 2.0 and DLSS 5 Feed will then be configured automatically." : "Official ReShade Setup will open so you can select shader and add-on packages before installation completes.")} Existing settings and presets are kept. The full add-on build is intended for single-player use.",
             MessageBoxImage.Warning)) return;
 
         Activity = "Checking the latest official ReShade release…";
-        var result = await _reshade.InstallLatestAsync(game, graphicsApi, installMode);
+        var result = await _reshade.InstallLatestAsync(game, graphicsApi, ReShadeInstallMode.InteractivePackages);
         AppendLog(result.Message);
         if (!result.Success || !game.RequiresIntegratedFeeder)
             Show(result.Message, result.Success ? MessageBoxImage.Information : MessageBoxImage.Error);

@@ -9,6 +9,10 @@
   DLSS 5 Feed, and configure motion-vector provider 3 automatically.
 - Bundle and hash-check the three pinned DLSS runtime files in future builds.
   The modified community `nvngx_dlssnr.dll` is labeled explicitly.
+- Replace the ReShade install-mode chooser with one Yes/No confirmation and
+  always open official Setup for interactive package selection.
+- Keep legacy non-DLSS games on the integrated-feed path when their DLSS SR DLL
+  came from the manager, and identify incomplete feed setup as needing repair.
 
 ## [v1.1.1] - 2026-09-20
 
