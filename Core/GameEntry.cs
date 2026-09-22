@@ -21,15 +21,16 @@ public sealed class GameEntry : INotifyPropertyChanged
     public bool HasReShadeProxyMismatch { get; set; }
     public IReadOnlyList<string> ReShadeModulePaths { get; set; } = [];
     public bool HasAddon { get; set; }
+    public bool HasIntegratedFeeder { get; set; }
     public bool HasDlss { get; set; }
     public bool HasDlssG { get; set; }
     public bool HasDlssNr { get; set; }
     public bool UsesIntegratedFeeder { get; set; }
     public bool HasIntegratedFeederSetup { get; set; }
-    public bool WasDlssAddedByManager { get; set; }
+    public bool HasNativeDlssSupport { get; set; }
     public bool Is64Bit { get; set; }
     public bool RequiresIntegratedFeeder =>
-        UsesIntegratedFeeder || HasIntegratedFeederSetup || WasDlssAddedByManager || !HasDlss;
+        UsesIntegratedFeeder || HasIntegratedFeederSetup || !HasNativeDlssSupport;
     public bool SupportsIntegratedFeeder => Is64Bit && GraphicsApi
         .Split('/', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
         .Any(api => api.Equals("DX11", StringComparison.OrdinalIgnoreCase) ||
@@ -86,7 +87,7 @@ public sealed class GameEntry : INotifyPropertyChanged
         new("DLSS FG", HasDlssG),
         new("DLSS NR", HasDlssNr),
         new(!UsesIntegratedFeeder && RequiresIntegratedFeeder && HasDlss
-            ? "Integrated Feed (repair needed)" : "Integrated Feed", UsesIntegratedFeeder)
+            ? "Integrated Feed (setup needed)" : "Integrated Feed", HasIntegratedFeeder)
     ];
 
     public event PropertyChangedEventHandler? PropertyChanged;

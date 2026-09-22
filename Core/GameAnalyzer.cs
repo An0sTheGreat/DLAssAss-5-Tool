@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Reflection.PortableExecutable;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Interop;
@@ -13,8 +12,6 @@ namespace DLSS5ManAger.Core;
 
 public sealed class GameAnalyzer
 {
-    private readonly string? _backupRoot;
-
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr ExtractAssociatedIcon(IntPtr instance, StringBuilder iconPath, ref ushort iconIndex);
 
@@ -43,8 +40,6 @@ public sealed class GameAnalyzer
     private static readonly Regex AppIdPattern = new("\"appid\"\\s+\"(?<value>\\d+)\"", RegexOptions.IgnoreCase);
     private static readonly Regex InstallDirPattern = new("\"installdir\"\\s+\"(?<value>[^\"]+)\"", RegexOptions.IgnoreCase);
 
-    public GameAnalyzer(string? backupRoot = null) => _backupRoot = backupRoot;
-
     public GameEntry Analyze(string directory)
     {
         var fullPath = DirectoryPath.Normalize(directory);
@@ -63,8 +58,11 @@ public sealed class GameAnalyzer
             .ToArray();
         var installNames = installFiles.Select(Path.GetFileName).OfType<string>()
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var hasAddon = installNames.Any(name => name.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase) &&
-            name.Contains("renodx-dlss", StringComparison.OrdinalIgnoreCase));
+        var addonPath = installFiles.FirstOrDefault(path => path.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase) &&
+            Path.GetFileName(path).Contains("renodx-dlss", StringComparison.OrdinalIgnoreCase));
+        var hasAddon = addonPath is not null;
+        var hasIntegratedFeeder = addonPath is not null && ReadEvidence(addonPath)
+            .Contains("embedded feeder overlay disabled", StringComparison.Ordinal);
         var reshadeModules = installFiles.Where(ReShadeService.IsReShadeModule).ToArray();
         var hasReShade = installNames.Contains("ReShade.ini") || installNames.Contains("ReShade.log") ||
             executableDirectory is not null && Directory.Exists(Path.Combine(executableDirectory, "reshade-shaders")) ||
@@ -75,7 +73,7 @@ public sealed class GameAnalyzer
         var hasIntegratedFeederSetup = executableDirectory is not null &&
             File.Exists(Path.Combine(executableDirectory, "reshade-shaders", "Shaders", "DLSS5_Feed.fx")) &&
             File.Exists(Path.Combine(executableDirectory, "reshade-shaders", "Shaders", "lumenite_Kernel.fx"));
-        var wasDlssAddedByManager = WasDlssAddedByManager(executableDirectory);
+        var hasNativeDlssSupport = HasNativeDlssSupport(files, executables);
 
         var game = new GameEntry
         {
@@ -87,12 +85,13 @@ public sealed class GameAnalyzer
                 !reshadeModules.Any(path => Path.GetFileName(path).Equals(expectedProxy, StringComparison.OrdinalIgnoreCase)),
             ReShadeModulePaths = reshadeModules,
             HasAddon = hasAddon,
+            HasIntegratedFeeder = hasIntegratedFeeder,
             HasDlss = installNames.Contains("nvngx_dlss.dll"),
             HasDlssG = installNames.Contains("nvngx_dlssg.dll"),
             HasDlssNr = installNames.Contains("nvngx_dlssnr.dll"),
             UsesIntegratedFeeder = usesIntegratedFeeder,
             HasIntegratedFeederSetup = hasIntegratedFeederSetup,
-            WasDlssAddedByManager = wasDlssAddedByManager,
+            HasNativeDlssSupport = hasNativeDlssSupport,
             Is64Bit = Is64BitExecutable(executables.FirstOrDefault()),
             SteamAppId = FindSteamAppId(fullPath),
             GraphicsApi = graphicsApi
@@ -113,30 +112,27 @@ public sealed class GameAnalyzer
         return game;
     }
 
-    private bool WasDlssAddedByManager(string? gameDirectory)
+    private static bool HasNativeDlssSupport(IEnumerable<string> files, IEnumerable<string> executables)
     {
-        if (_backupRoot is null || gameDirectory is null) return false;
-        try
+        var fileArray = files.ToArray();
+        if (fileArray.Any(path => Path.GetFileName(path).Equals("sl.dlss.dll", StringComparison.OrdinalIgnoreCase) ||
+            path.Contains("\\Engine\\Plugins\\Runtime\\Nvidia\\DLSS\\", StringComparison.OrdinalIgnoreCase)))
+            return true;
+
+        var integrationModules = fileArray.Where(path =>
         {
-            var root = InstallerService.GameBackupDirectory(_backupRoot, gameDirectory);
-            if (!Directory.Exists(root)) return false;
-            foreach (var directory in Directory.EnumerateDirectories(root).OrderBy(path => path))
-            {
-                try
-                {
-                    var manifest = JsonSerializer.Deserialize<InstallManifest>(
-                        File.ReadAllText(Path.Combine(directory, "manifest.json")));
-                    if (manifest is null || !DirectoryPath.Comparer.Equals(
-                            DirectoryPath.Normalize(manifest.GameDirectory), DirectoryPath.Normalize(gameDirectory))) continue;
-                    var dlss = manifest.Files.FirstOrDefault(file =>
-                        file.TargetName.Equals("nvngx_dlss.dll", StringComparison.OrdinalIgnoreCase));
-                    if (dlss is not null) return dlss.BackupName is null;
-                }
-                catch { }
-            }
-        }
-        catch { }
-        return false;
+            var name = Path.GetFileName(path);
+            return path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
+                !name.StartsWith("nvngx_", StringComparison.OrdinalIgnoreCase) &&
+                (name.Contains("dlss", StringComparison.OrdinalIgnoreCase) ||
+                 name.Contains("ngx", StringComparison.OrdinalIgnoreCase) ||
+                 name.StartsWith("sl.", StringComparison.OrdinalIgnoreCase));
+        });
+        return executables.Take(1).Concat(integrationModules).Distinct(DirectoryPath.Comparer)
+            .Select(ReadEvidence).Any(evidence =>
+                evidence.Contains("NVSDK_NGX_D3D11_", StringComparison.Ordinal) ||
+                evidence.Contains("NVSDK_NGX_D3D12_", StringComparison.Ordinal) ||
+                evidence.Contains("NVSDK_NGX_VULKAN_", StringComparison.Ordinal));
     }
 
     internal static bool HasEnabledSetting(string path, string key)

@@ -23,20 +23,23 @@ try
     File.WriteAllText(Path.Combine(installDirectory, "dlss5-feed.cfg"), "managed_non_dlss = 1\n");
     File.Copy(Environment.ProcessPath!, executable);
     File.AppendAllText(executable, "d3d12.dll");
+    File.WriteAllText(Path.Combine(installDirectory, "nvngx_dlss.dll"), "original sr runtime");
     File.WriteAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll"), "original");
     File.WriteAllText(Path.Combine(game, InstallerService.AddonName), "misplaced");
     File.WriteAllText(Path.Combine(game, "nvngx_dlssg.dll"), "misplaced");
-    File.WriteAllText(Path.Combine(payload, InstallerService.AddonName), "addon");
+    File.WriteAllText(Path.Combine(payload, InstallerService.AddonName), "addon embedded feeder overlay disabled");
     foreach (var name in InstallerService.RequiredDlssFiles)
         File.WriteAllText(Path.Combine(dlss, name), name == "nvngx_dlssnr.dll" ? "replacement" : name);
 
-    var analyzer = new GameAnalyzer(backups);
+    var analyzer = new GameAnalyzer();
     var scanner = new GameScanner();
     var service = new InstallerService(backups, payload);
     var analysis = analyzer.Analyze(game);
     Require(analysis.HasReShade, "ReShade detection failed.");
-    Require(analysis.UsesIntegratedFeeder && analysis.RequiresIntegratedFeeder && analysis.SupportsIntegratedFeeder,
-        "Managed non-DLSS feeder detection failed.");
+    Require(analysis.HasDlss && analysis.UsesIntegratedFeeder && analysis.RequiresIntegratedFeeder &&
+        analysis.SupportsIntegratedFeeder, "A loose DLSS DLL was mistaken for native game support.");
+    Require(!analysis.HasIntegratedFeeder && !analysis.HasNativeDlssSupport,
+        "Feeder capability or native DLSS support was falsely detected.");
     Require(analysis.Is64Bit, "64-bit executable detection failed.");
     Require(!analysis.HasAddon && !analysis.HasDlssG, "Files away from the selected executable were treated as installed.");
     Require(analysis.IconSource is not null, "Executable icon extraction failed.");
@@ -146,9 +149,19 @@ try
     Require(File.Exists(Path.Combine(installDirectory, InstallerService.AddonName)), "Add-on was not installed beside the executable.");
     File.WriteAllText(Path.Combine(installDirectory, "dlss5-feed.cfg"), "managed_non_dlss=0\n");
     var legacyNonDlss = analyzer.Analyze(game);
-    Require(legacyNonDlss.WasDlssAddedByManager && legacyNonDlss.RequiresIntegratedFeeder &&
-        !legacyNonDlss.UsesIntegratedFeeder && legacyNonDlss.DlssLabel == "Feed Repair Needed",
-        "Manager-installed DLSS was mistaken for native game support.");
+    Require(legacyNonDlss.HasIntegratedFeeder && !legacyNonDlss.HasNativeDlssSupport &&
+        legacyNonDlss.RequiresIntegratedFeeder && !legacyNonDlss.UsesIntegratedFeeder &&
+        legacyNonDlss.DlssLabel == "Feed Repair Needed" && legacyNonDlss.DetailStatuses[^1].Exists,
+        "Embedded feeder capability or non-DLSS setup requirement was not detected.");
+    var nativeGame = Path.Combine(root, "NativeDlss");
+    Directory.CreateDirectory(nativeGame);
+    var nativeExecutable = Path.Combine(nativeGame, "native.exe");
+    File.Copy(Environment.ProcessPath!, nativeExecutable);
+    File.AppendAllText(nativeExecutable, "d3d12.dll NVSDK_NGX_D3D12_CreateFeature");
+    File.WriteAllText(Path.Combine(nativeGame, "nvngx_dlss.dll"), "native runtime");
+    var nativeAnalysis = analyzer.Analyze(nativeGame);
+    Require(nativeAnalysis.HasNativeDlssSupport && !nativeAnalysis.RequiresIntegratedFeeder,
+        "Native DLSS code evidence did not suppress automatic feeder setup.");
     Require(File.ReadAllText(installedBridge) == "old bridge", "Install modified an existing external DLSS 5 Bridge.");
     Require(File.ReadAllText(Path.Combine(game, InstallerService.AddonName)) == "misplaced", "Parent-folder files were modified.");
     Require(service.RestoreLatest(executable).Success, "Restore failed.");
@@ -160,7 +173,7 @@ try
     Require(service.Install(executable, dlss, true).Success, "Reinstallation failed.");
     Require(File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "updated addon", "Reinstall did not replace the binary.");
     Require(File.ReadAllText(Path.Combine(installDirectory, "ReShade.ini")) == "[GENERAL]", "Reinstall changed settings.");
-    Require(service.RestoreLatest(executable).Success && File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "addon",
+    Require(service.RestoreLatest(executable).Success && File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "addon embedded feeder overlay disabled",
         "Reinstall backup did not restore the previous add-on.");
     File.WriteAllText(Path.Combine(payload, InstallerService.AddonName), "bulk updated addon");
     File.WriteAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll"), "user changed");
@@ -171,7 +184,7 @@ try
         File.ReadAllText(Path.Combine(installDirectory, "ReShade.ini")) == "[GENERAL]",
         "Add-on-only update changed DLSS or ReShade settings.");
     Require(service.RestoreLatest(executable).Success &&
-        File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "addon",
+        File.ReadAllText(Path.Combine(installDirectory, InstallerService.AddonName)) == "addon embedded feeder overlay disabled",
         "Add-on-only update backup did not restore the previous add-on.");
     File.Delete(Path.Combine(installDirectory, InstallerService.AddonName));
     var backupsBeforeSkippedUpdate = Directory.EnumerateDirectories(backups, "*", SearchOption.AllDirectories).Count();

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Detect the embedded feeder capability directly from the installed add-on, so
+  its status is correct for every game independently of activation state.
+- Determine native DLSS support from game/engine NGX integration evidence rather
+  than treating any loose `nvngx_dlss.dll` as native support.
+
 ## [v1.1.2] - 2026-09-21
 
 - Integrate DLSS5 Feeder into the add-on and gate it behind the manager's

@@ -57,7 +57,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public MainWindow()
     {
         _settings = _store.Load();
-        _analyzer = new GameAnalyzer(_store.BackupDirectory);
+        _analyzer = new GameAnalyzer();
         _isLibraryView = _settings.IsLibraryView;
         InitializeComponent();
         RestoreWindowPlacement();
