@@ -13,7 +13,7 @@ $expectedDllHashes = @{
     "nvngx_dlssnr.dll" = "E67DEE209320CDAFE0E93E45675D7AA34323A53ACC57A72B2E40A181581C989A"
 }
 $workspaceRoot = [IO.Path]::GetFullPath((Join-Path $managerRoot "..\..\.."))
-$releaseDirectory = Join-Path $workspaceRoot "artifacts\manager-v1.1.2"
+$releaseDirectory = Join-Path $workspaceRoot "artifacts\v1.1.2"
 $publishDirectory = Join-Path $workspaceRoot "artifacts\.manager-v1.1.2-publish"
 $archive = Join-Path $releaseDirectory "DLAssAss-5-Tool-v1.1.2-$Runtime.zip"
 $manualArchive = Join-Path $releaseDirectory "DLSS-5-Super-Anus-Manually-v1.1.2.zip"

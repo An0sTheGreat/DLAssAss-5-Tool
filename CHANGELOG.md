@@ -6,6 +6,8 @@
   its status is correct for every game independently of activation state.
 - Determine native DLSS support from game/engine NGX integration evidence rather
   than treating any loose `nvngx_dlss.dll` as native support.
+- Hide Integrated Feed setup status for native-DLSS DX12 games while keeping
+  the feeder embedded and available silently; retain the status for DX11.
 
 ## [v1.1.2] - 2026-09-21
 

@@ -64,14 +64,19 @@ public sealed class GameEntry : INotifyPropertyChanged
     public string HideActionLabel => IsHidden ? "Unhide game" : "Hide game";
     public string ReShadeLabel => HasReShade ? "Detected" : "Not found";
     public bool CanInstallReShade => ReShadeService.SupportedGraphicsApis(GraphicsApi).Count > 0;
+    public bool UsesDx12 => ReShadeService.SupportedGraphicsApis(GraphicsApi)
+        .Contains("DX12", StringComparer.OrdinalIgnoreCase);
     public string ReShadeActionLabel => HasReShade ? "REINSTALL RESHADE"
         : ReShadeService.SupportedGraphicsApis(GraphicsApi).Count == 0 ? "GRAPHICS API REQUIRED"
         : "INSTALL RESHADE";
     public string AddonLabel => HasAddon ? "Installed" : "Not installed";
     public string AddonActionLabel => HasAddon ? "REINSTALL" : "INSTALL";
-    public string DlssLabel => UsesIntegratedFeeder ? "Integrated Feed"
+    public string DlssLabel => UsesDx12 && HasDlss ? InstalledDlssLabel
+        : HasNativeDlssSupport ? InstalledDlssLabel
+        : UsesIntegratedFeeder ? "Integrated Feed"
         : RequiresIntegratedFeeder && HasDlss ? "Feed Repair Needed"
-        : string.Join(" / ", new[]
+        : InstalledDlssLabel;
+    private string InstalledDlssLabel => string.Join(" / ", new[]
     {
         HasDlss ? "SR" : null,
         HasDlssG ? "FG" : null,
@@ -86,8 +91,11 @@ public sealed class GameEntry : INotifyPropertyChanged
         new("DLSS SR", HasDlss),
         new("DLSS FG", HasDlssG),
         new("DLSS NR", HasDlssNr),
-        new(!UsesIntegratedFeeder && RequiresIntegratedFeeder && HasDlss
-            ? "Integrated Feed (setup needed)" : "Integrated Feed", HasIntegratedFeeder)
+        ..(UsesDx12 && HasDlss ? Array.Empty<DetailStatus>() : new[]
+        {
+            new DetailStatus(!UsesIntegratedFeeder && RequiresIntegratedFeeder && HasDlss
+                ? "Integrated Feed (setup needed)" : "Integrated Feed", HasIntegratedFeeder)
+        })
     ];
 
     public event PropertyChangedEventHandler? PropertyChanged;

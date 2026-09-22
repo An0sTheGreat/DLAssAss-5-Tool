@@ -103,7 +103,8 @@ public sealed class GameAnalyzer
         {
             game.ExecutablePath is null ? "No game executable found" : Path.GetFileName(game.ExecutablePath),
             hasReShade ? "ReShade detected" : "ReShade not detected",
-            usesIntegratedFeeder ? "Integrated DLSS 5 Feed"
+            game.UsesDx12 && game.HasDlss ? "DLSS SR"
+                : usesIntegratedFeeder ? "Integrated DLSS 5 Feed"
                 : game.RequiresIntegratedFeeder && game.HasDlss ? "Integrated feed repair needed"
                 : game.HasDlss ? "DLSS SR" : "No DLSS SR",
             game.HasDlssG ? "DLSS FG" : "No DLSS FG",

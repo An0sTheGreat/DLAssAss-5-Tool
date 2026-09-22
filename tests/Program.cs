@@ -38,6 +38,9 @@ try
     Require(analysis.HasReShade, "ReShade detection failed.");
     Require(analysis.HasDlss && analysis.UsesIntegratedFeeder && analysis.RequiresIntegratedFeeder &&
         analysis.SupportsIntegratedFeeder, "A loose DLSS DLL was mistaken for native game support.");
+    Require(analysis.UsesDx12 && analysis.DlssLabel == "SR / NR" &&
+        analysis.DetailStatuses.All(status => !status.Label.StartsWith("Integrated Feed")),
+        "DX12 games with DLSS SR did not hide integrated feeder status.");
     Require(!analysis.HasIntegratedFeeder && !analysis.HasNativeDlssSupport,
         "Feeder capability or native DLSS support was falsely detected.");
     Require(analysis.Is64Bit, "64-bit executable detection failed.");
@@ -151,7 +154,8 @@ try
     var legacyNonDlss = analyzer.Analyze(game);
     Require(legacyNonDlss.HasIntegratedFeeder && !legacyNonDlss.HasNativeDlssSupport &&
         legacyNonDlss.RequiresIntegratedFeeder && !legacyNonDlss.UsesIntegratedFeeder &&
-        legacyNonDlss.DlssLabel == "Feed Repair Needed" && legacyNonDlss.DetailStatuses[^1].Exists,
+        legacyNonDlss.DlssLabel == "SR / FG / NR" &&
+        legacyNonDlss.DetailStatuses.All(status => !status.Label.StartsWith("Integrated Feed")),
         "Embedded feeder capability or non-DLSS setup requirement was not detected.");
     var nativeGame = Path.Combine(root, "NativeDlss");
     Directory.CreateDirectory(nativeGame);
@@ -160,8 +164,13 @@ try
     File.AppendAllText(nativeExecutable, "d3d12.dll NVSDK_NGX_D3D12_CreateFeature");
     File.WriteAllText(Path.Combine(nativeGame, "nvngx_dlss.dll"), "native runtime");
     var nativeAnalysis = analyzer.Analyze(nativeGame);
-    Require(nativeAnalysis.HasNativeDlssSupport && !nativeAnalysis.RequiresIntegratedFeeder,
-        "Native DLSS code evidence did not suppress automatic feeder setup.");
+    Require(nativeAnalysis.HasNativeDlssSupport && !nativeAnalysis.RequiresIntegratedFeeder &&
+        nativeAnalysis.DlssLabel == "SR" &&
+        nativeAnalysis.DetailStatuses.All(status => !status.Label.StartsWith("Integrated Feed")),
+        "Native DX12 DLSS games did not hide integrated feeder setup status.");
+    nativeAnalysis.GraphicsApi = "DX11";
+    Require(nativeAnalysis.DetailStatuses.Any(status => status.Label.StartsWith("Integrated Feed")),
+        "DX11 games must retain integrated feeder status.");
     Require(File.ReadAllText(installedBridge) == "old bridge", "Install modified an existing external DLSS 5 Bridge.");
     Require(File.ReadAllText(Path.Combine(game, InstallerService.AddonName)) == "misplaced", "Parent-folder files were modified.");
     Require(service.RestoreLatest(executable).Success, "Restore failed.");
