@@ -71,6 +71,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         LibraryViewButton.IsChecked = IsLibraryView;
         FolderViewButton.IsChecked = !IsLibraryView;
         LoadLog();
+        AppendLog(_installer.BlackwellGpu
+            ? "RTX 50 series GPU detected: installs use NVIDIA DLSSNR 310.9.16."
+            : "No RTX 50 series GPU detected: installs use the SF 310.8 DLSSNR repack.");
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -164,13 +167,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void ScanSteam_Click(object sender, RoutedEventArgs e)
     {
-        await RunBusy("Scanning Steam libraries…", () =>
+        await RunBusy("Scanning game libraries…", () =>
         {
-            var discovered = _scanner.ScanSteamLibraries();
+            var discovered = _scanner.ScanKnownLibraries();
             AddDiscovered(discovered);
             _store.Save(_settings);
             return discovered.Count;
-        }, count => $"Steam scan found {count} game folder(s).");
+        }, count => $"Library scan found {count} game folder(s) (Steam, Epic, GOG, Xbox).");
         await RefreshKnownGames();
     }
 
@@ -239,7 +242,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ApplySavedMetadata(GameEntry game, HashSet<string>? hidden = null)
     {
-        game.IsHidden = (hidden ?? new(_settings.HiddenGameDirectories, DirectoryPath.Comparer)).Contains(game.GameDirectory);
+        // Tools, launchers and leftovers are hidden by default; an explicit "Unhide" is remembered.
+        game.IsHidden = (hidden ?? new(_settings.HiddenGameDirectories, DirectoryPath.Comparer)).Contains(game.GameDirectory) ||
+            game.IsLikelyNonGame && !_settings.UnhiddenGameDirectories.Contains(game.GameDirectory, DirectoryPath.Comparer);
         if (_settings.CustomGameNames.TryGetValue(game.GameDirectory, out var name)) game.Name = name;
     }
 
@@ -269,7 +274,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (sender is not MenuItem { CommandParameter: GameEntry game }) return;
         game.IsHidden = !game.IsHidden;
         _settings.HiddenGameDirectories.RemoveAll(path => DirectoryPath.Comparer.Equals(path, game.GameDirectory));
+        _settings.UnhiddenGameDirectories.RemoveAll(path => DirectoryPath.Comparer.Equals(path, game.GameDirectory));
         if (game.IsHidden) _settings.HiddenGameDirectories.Add(game.GameDirectory);
+        else if (game.IsLikelyNonGame) _settings.UnhiddenGameDirectories.Add(game.GameDirectory);
         _store.Save(_settings);
         AppendLog($"{(game.IsHidden ? "Hidden" : "Unhidden")} game: {game.Name}");
         ApplyGameFilter();
@@ -584,7 +591,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         DlssFileStatuses.Clear();
         foreach (var name in InstallerService.RequiredDlssFiles)
-            DlssFileStatuses.Add(new DlssFileStatus(name, File.Exists(Path.Combine(DlssFilesDirectory, name))));
+            DlssFileStatuses.Add(new DlssFileStatus(name, File.Exists(_installer.DlssSourcePath(DlssFilesDirectory, name))));
         var confirmed = DlssFileStatuses.All(status => status.Exists);
         DlssFilesConfirmed = confirmed;
         DlssStatusTitle = confirmed ? "✓  Bundled DLSS files ready" : "✕  Bundled DLSS file missing:";

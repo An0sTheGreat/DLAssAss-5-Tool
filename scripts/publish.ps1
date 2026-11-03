@@ -6,17 +6,18 @@ param(
 $ErrorActionPreference = "Stop"
 $managerRoot = Split-Path -Parent $PSScriptRoot
 $sourceAddon = Join-Path $managerRoot "Payload\renodx-dlss5-super-anus.addon64"
-$expectedAddonHash = "7393AB462F9CDA74DA9E1AEEED9DB832D8FCBC65C6CCDF2136455729D680E455"
+$expectedAddonHash = "3AF920C783F77C1DAFF2F6865305375350D7EF575CD813632DFBD0123FA18870"
 $expectedDllHashes = @{
     "nvngx_dlss.dll" = "3975567B8943C53ACCE397F2B72380092F84F162D00B0D2C7D08A1025C563983"
     "nvngx_dlssg.dll" = "FF6E90EB78B827927DFF5B4ECC6B1C870C2E9BCA29ED9F48C7D348CC9E170B82"
     "nvngx_dlssnr.dll" = "E67DEE209320CDAFE0E93E45675D7AA34323A53ACC57A72B2E40A181581C989A"
+    "RTX 50\nvngx_dlssnr.dll" = "2BC19BC09A7B89DD44F73E2AC0108FCC586E2154BDD0830F242F4F040E28789F"
 }
 $workspaceRoot = [IO.Path]::GetFullPath((Join-Path $managerRoot "..\..\.."))
-$releaseDirectory = Join-Path $workspaceRoot "artifacts\v1.1.2"
-$publishDirectory = Join-Path $workspaceRoot "artifacts\.manager-v1.1.2-publish"
-$archive = Join-Path $releaseDirectory "DLAssAss-5-Tool-v1.1.2-$Runtime.zip"
-$manualArchive = Join-Path $releaseDirectory "DLSS-5-Super-Anus-Manually-v1.1.2.zip"
+$releaseDirectory = Join-Path $workspaceRoot "artifacts\v1.1.4"
+$publishDirectory = Join-Path $workspaceRoot "artifacts\.manager-v1.1.4-publish"
+$archive = Join-Path $releaseDirectory "DLAssAss-5-Tool-v1.1.4-$Runtime.zip"
+$manualArchive = Join-Path $releaseDirectory "DLSS-5-Super-Anus-Manually-v1.1.4.zip"
 $looseAddon = Join-Path $releaseDirectory ([IO.Path]::GetFileName($sourceAddon))
 $fullArtifactsRoot = [IO.Path]::GetFullPath((Join-Path $workspaceRoot "artifacts")) + [IO.Path]::DirectorySeparatorChar
 foreach ($path in @($releaseDirectory, $publishDirectory)) {
@@ -56,7 +57,9 @@ Copy-Item -LiteralPath $sourceAddon -Destination (Join-Path $payloadDirectory ([
 Copy-Item -LiteralPath (Join-Path $managerRoot "Payload\DLSS5_Feed.fx") -Destination $payloadDirectory -Force
 Copy-Item -LiteralPath (Join-Path $managerRoot "DLSS Files\README.md") -Destination $dlssDirectory -Force
 foreach ($name in $expectedDllHashes.Keys) {
-    Copy-Item -LiteralPath (Join-Path $managerRoot "DLSS Files\$name") -Destination $dlssDirectory -Force
+    $destination = Join-Path $dlssDirectory $name
+    New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $managerRoot "DLSS Files\$name") -Destination $destination -Force
 }
 Copy-Item -LiteralPath (Join-Path $managerRoot "README.md") -Destination $publishDirectory -Force
 foreach ($document in @("CHANGELOG.md", "VERSION", "THIRD_PARTY_NOTICES.md")) {

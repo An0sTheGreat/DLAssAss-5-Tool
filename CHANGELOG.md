@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+## [v1.1.4] - 2026-10-26
+
+- Neural Rendering runtime: RTX 50 series GPUs now get NVIDIA's signed `nvngx_dlssnr.dll` 310.9.16
+  (from `DLSS Files/RTX 50`); RTX 20/30/40 GPUs keep the SF 310.8 repack. The GPU is read from the
+  Windows display-adapter list, and the choice is shown in the log at startup.
+- Add-on 1.1.4 (`1.1.4-nr-runtime-compat.1`, file version 1.1.4.34): NVIDIA's DLSSNR runtimes bind the
+  NGX core's descriptor heaps, which games create on ReShade's proxy device; the add-on handed them the
+  native command list and D3D12 faulted at feature creation. Neural Rendering commands are now recorded
+  into the game's own NGX command list. The SF repack keeps the native list.
+- On NVIDIA driver 617.42, every 310.8 Neural Rendering runtime (signed or repacked) evaluates about 40x
+  slower than 310.9.16 and its neural effect collapses to a faint colour shift, which also made the
+  resolution, transfer, colour, sharpness and multipass controls look ineffective. Use 310.9.16 (RTX 50).
+- 310.9.16 can free a retained Neural Rendering feature before device teardown releases it; the add-on
+  now skips releasing an already-unmapped handle (logged) instead of crashing on exit.
+- Vulkan: the native NR path accepts NVIDIA 310.9.16 in addition to both 310.8 builds.
+- Opt-in `DiagnosticTelemetry=1` (`[RenoDXNeuralResolution]`): one summary line per second plus Neural
+  Rendering create/release/shutdown traces. Off by default.
+- Documentation now labels the RTX 50 runtime as NVIDIA-signed and the older-GPU runtime as the SF repack.
+
+## [v1.1.3] - 2026-10-03
+
+- Detection accuracy: native DLSS/NGX evidence now comes from scanning whole executables and their integration
+  modules (ASCII and UTF-16, including statically linked NGX); the old head/tail sampling missed most large games.
+- Graphics API: read from the game's own evidence first (ReShade.log, Unity Player.log/output_log.txt, Unreal and CryEngine
+  logs and settings, SCS and Warframe-engine logs, Ogre Plugins*.cfg) before static file evidence; Unity defaults to DX11.
+- Executable choice: ranks candidates (64-bit, installed ReShade, size, VR/engine-tool penalties) instead of taking the largest.
+- Display names: inner binary folders (Bin64, LIVE\Bin64, Binaries\Win64 ...) use the enclosing game folder; Steam games use
+  the title from their app manifest.
+- Library scan: Steam manifests decide what is installed (stale/uninstalled folders and Steamworks redistributables are
+  dropped), Epic, GOG and Xbox libraries are scanned too ("Scan Libraries"), and Unreal Engine/Tools folders are no longer
+  reported as games.
+- Tools, launchers and leftovers are hidden by default (Show hidden still lists them; Unhide is remembered).
+- Added `tests/DetectReport` (read-only detection report) and detection regression tests.
+- Vulkan neural pass: compress HDR game output into 0-1 before the neural network and expand the result afterwards
+  (live `VulkanNrKnee` setting, default 80%), fixing corrupt rectangular tiles around bright lights in Vulkan games
+  such as Enshrouded. The network never reads and writes the same image.
+- Vulkan: Neural Transfer Strength above 100% (up to 200%) and Neural Sharpness now work, using the DX12 resolve maths.
+- Vulkan: Encoding and Diffuse White now drive the input conversion (per-preset Encoding is read from the active preset).
+- Vulkan: the overlay Hook Method status reads "Active" once a pass has run, instead of "Waiting".
+- Vulkan: Neural Rendering Resolution other than 100% still keeps the native output (not yet supported).
 - Detect the embedded feeder capability directly from the installed add-on, so
   its status is correct for every game independently of activation state.
 - Determine native DLSS support from game/engine NGX integration evidence rather

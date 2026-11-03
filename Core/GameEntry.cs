@@ -36,6 +36,13 @@ public sealed class GameEntry : INotifyPropertyChanged
         .Any(api => api.Equals("DX11", StringComparison.OrdinalIgnoreCase) ||
                     api.Equals("DX12", StringComparison.OrdinalIgnoreCase));
     public string? SteamAppId { get; set; }
+    /// <summary>Why native DLSS support was detected (empty when it was not).</summary>
+    public string NativeDlssEvidence { get; set; } = "";
+    /// <summary>Where the graphics API came from (ReShade.log, engine log/settings or static file evidence).</summary>
+    public string ApiSource { get; set; } = "";
+    /// <summary>Set when the folder is probably a tool, launcher or leftover rather than a game.</summary>
+    public string? NonGameReason { get; set; }
+    public bool IsLikelyNonGame => NonGameReason is not null;
     public bool IsHidden
     {
         get => _isHidden;

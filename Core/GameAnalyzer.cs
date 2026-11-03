@@ -23,10 +23,21 @@ public sealed class GameAnalyzer
         "crashreporter.exe", "crashpad_handler.exe", "unins000.exe", "setup.exe", "launcher.exe"
     };
     private static readonly string[] IgnoredExecutableFragments =
-        ["benchmark", "config", "crash", "creationkit", "ffmpeg", "installer", "redist", "setup", "unins", "updater"];
+        ["benchmark", "config", "crash", "creationkit", "ffmpeg", "installer", "redist", "setup", "unins", "updater",
+         "helper", "subprocess", "patch", "safemode", "handler", "vcredist", "vc_redist", "dotnet", "ndp4", "dxsetup",
+         "start_protected", "easyanticheat", "battleye", "beservice", "webview", "launcher"];
+    // Executables below these folders are engine/redistributable tooling, never the game itself.
+    private static readonly string[] ToolingPathSegments =
+        ["\\Engine\\Binaries\\", "\\Engine\\Extras\\", "\\ThirdParty\\", "\\_CommonRedist\\", "\\Redist\\", "\\Redistributables\\",
+         "\\EasyAntiCheat\\", "\\BattlEye\\", "\\Crashpad\\"];
+    private static readonly Regex NonGameName = new(
+        @"steamworks|steamvr|steam linux runtime|proton|redist|controller config|wallpaper[ _]?engine|lossless scaling|borderless gaming|" +
+        @"ovr[ _]?(drop|advanced)|^dsx$|xxmi|hoyoplay|launcher|reshade|\bpatch\b|benchmark|dedicated server|\bsdk\b|\beditor\b|mod tools|" +
+        @"workshop|3dmark|obs studio",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
     private static readonly HashSet<string> SkippedDirectories = new(StringComparer.OrdinalIgnoreCase)
     {
-        "_DLSS5_Backups", "__Installer", "assets", "audio", "backup", "backups", "cache", "content", "data", "dlc", "libs", "localization", "mods", "movies", "packs", "redist", "screenshots", "tools"
+        "_DLSS5_Backups", "__Installer", "_CommonRedist", "CommonRedist", "Redistributables", "EasyAntiCheat", "BattlEye", "Crashpad", "assets", "audio", "backup", "backups", "cache", "content", "data", "dlc", "libs", "localization", "mods", "movies", "packs", "redist", "screenshots", "tools"
     };
     private static readonly (string Api, string[] Tokens)[] ApiTokens =
     [
@@ -38,6 +49,7 @@ public sealed class GameAnalyzer
         ("OpenGL", ["opengl32.dll", "opengl"])
     ];
     private static readonly Regex AppIdPattern = new("\"appid\"\\s+\"(?<value>\\d+)\"", RegexOptions.IgnoreCase);
+    private static readonly Regex ManifestName = new("\"name\"\\s+\"(?<value>[^\"]+)\"", RegexOptions.IgnoreCase);
     private static readonly Regex InstallDirPattern = new("\"installdir\"\\s+\"(?<value>[^\"]+)\"", RegexOptions.IgnoreCase);
 
     public GameEntry Analyze(string directory)
@@ -46,11 +58,12 @@ public sealed class GameAnalyzer
         var files = EnumerateRelevantFiles(fullPath).ToArray();
         var names = files.Select(Path.GetFileName).OfType<string>()
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var executables = files.Where(path => path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-            .Where(path => !IsIgnoredExecutable(path))
-            .OrderByDescending(SafeLength).ToArray();
+        var executables = RankExecutables(files.Where(path => path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            .Where(path => !IsIgnoredExecutable(path)).ToArray(), files);
+        var steam = FindSteamManifest(fullPath);
+        var displayName = steam.Name is { Length: > 0 } ? steam.Name : GameNaming.Resolve(fullPath);
 
-        var apis = DetectApis(names, executables, files);
+        var apis = DetectApis(names, executables, files, fullPath, displayName, out var apiSource);
         var graphicsApi = apis.Count == 0 ? "Unknown" : string.Join(" / ", apis);
         var executableDirectory = Path.GetDirectoryName(executables.FirstOrDefault());
         var installFiles = executableDirectory is null ? [] : files
@@ -73,11 +86,13 @@ public sealed class GameAnalyzer
         var hasIntegratedFeederSetup = executableDirectory is not null &&
             File.Exists(Path.Combine(executableDirectory, "reshade-shaders", "Shaders", "DLSS5_Feed.fx")) &&
             File.Exists(Path.Combine(executableDirectory, "reshade-shaders", "Shaders", "lumenite_Kernel.fx"));
-        var hasNativeDlssSupport = HasNativeDlssSupport(files, executables);
+        var (hasNativeDlssSupport, nativeEvidence) = DetectNativeDlss(files, executables);
+        var nonGameReason = executables.Length == 0 ? "no game executable found"
+            : NonGameName.Match(displayName) is { Success: true } match ? $"name matches '{match.Value}'" : null;
 
         var game = new GameEntry
         {
-            Name = Path.GetFileName(fullPath.TrimEnd(Path.DirectorySeparatorChar)) is { Length: > 0 } name ? name : fullPath,
+            Name = displayName,
             GameDirectory = fullPath,
             ExecutablePath = executables.FirstOrDefault(),
             HasReShade = hasReShade,
@@ -93,8 +108,11 @@ public sealed class GameAnalyzer
             HasIntegratedFeederSetup = hasIntegratedFeederSetup,
             HasNativeDlssSupport = hasNativeDlssSupport,
             Is64Bit = Is64BitExecutable(executables.FirstOrDefault()),
-            SteamAppId = FindSteamAppId(fullPath),
-            GraphicsApi = graphicsApi
+            SteamAppId = steam.AppId,
+            GraphicsApi = graphicsApi,
+            ApiSource = apiSource,
+            NativeDlssEvidence = nativeEvidence,
+            NonGameReason = nonGameReason
         };
         game.IconSource = LoadIcon(game.ExecutablePath);
 
@@ -113,27 +131,90 @@ public sealed class GameAnalyzer
         return game;
     }
 
-    private static bool HasNativeDlssSupport(IEnumerable<string> files, IEnumerable<string> executables)
+    private static readonly Regex IntegrationModuleName = new(@"(^|[._\- ])(dlss|ngx|streamline)|^sl\.",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly HashSet<string> EngineModules = new(StringComparer.OrdinalIgnoreCase)
+        { "UnityPlayer.dll", "GameAssembly.dll", "engine.dll", "renderer.dll" };
+
+    /// <summary>
+    /// Native DLSS support means the game integrates NGX/Streamline itself. Evidence comes from Streamline/Unreal plugin
+    /// files and from scanning the whole executable and its integration modules for NGX markers (ASCII and UTF-16).
+    /// </summary>
+    private static (bool Native, string Evidence) DetectNativeDlss(IEnumerable<string> files, IEnumerable<string> executables)
     {
         var fileArray = files.ToArray();
-        if (fileArray.Any(path => Path.GetFileName(path).Equals("sl.dlss.dll", StringComparison.OrdinalIgnoreCase) ||
-            path.Contains("\\Engine\\Plugins\\Runtime\\Nvidia\\DLSS\\", StringComparison.OrdinalIgnoreCase)))
-            return true;
+        var evidence = new List<string>();
+        if (fileArray.Any(path => Path.GetFileName(path).Equals("sl.dlss.dll", StringComparison.OrdinalIgnoreCase)))
+            evidence.Add("sl.dlss.dll present");
+        if (fileArray.Any(path => path.Contains("\\Engine\\Plugins\\Runtime\\Nvidia\\DLSS\\", StringComparison.OrdinalIgnoreCase)))
+            evidence.Add("Unreal DLSS plugin present");
 
-        var integrationModules = fileArray.Where(path =>
+        var primary = executables.FirstOrDefault();
+        var scanned = new List<string>();
+        if (primary is not null) scanned.Add(primary);
+        if (primary is not null && Path.GetDirectoryName(primary) is { } directory)
+            scanned.AddRange(fileArray.Where(path => path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
+                    DirectoryPath.Comparer.Equals(Path.GetDirectoryName(path), directory) &&
+                    !Path.GetFileName(path).StartsWith("nvngx_", StringComparison.OrdinalIgnoreCase) && !ReShadeService.IsReShadeModule(path) &&
+                    (IntegrationModuleName.IsMatch(Path.GetFileName(path)) || EngineModules.Contains(Path.GetFileName(path))))
+                .OrderByDescending(SafeLength).Take(6));
+        foreach (var path in scanned.Distinct(DirectoryPath.Comparer))
         {
-            var name = Path.GetFileName(path);
-            return path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
-                !name.StartsWith("nvngx_", StringComparison.OrdinalIgnoreCase) &&
-                (name.Contains("dlss", StringComparison.OrdinalIgnoreCase) ||
-                 name.Contains("ngx", StringComparison.OrdinalIgnoreCase) ||
-                 name.StartsWith("sl.", StringComparison.OrdinalIgnoreCase));
-        });
-        return executables.Take(1).Concat(integrationModules).Distinct(DirectoryPath.Comparer)
-            .Select(ReadEvidence).Any(evidence =>
-                evidence.Contains("NVSDK_NGX_D3D11_", StringComparison.Ordinal) ||
-                evidence.Contains("NVSDK_NGX_D3D12_", StringComparison.Ordinal) ||
-                evidence.Contains("NVSDK_NGX_VULKAN_", StringComparison.Ordinal));
+            var found = BinaryEvidence.Scan(path);
+            if (found.NativeDlss) evidence.AddRange(found.Describe().Select(item => $"{Path.GetFileName(path)}: {item}"));
+        }
+        return (evidence.Count > 0, string.Join("; ", evidence));
+    }
+
+    /// <summary>
+    /// Best candidate first: 64-bit, beside Steam/graphics/DLSS files, larger, in a Binaries/bin folder; engine tooling,
+    /// VR variants of a flat-screen executable and 32-bit helpers sort last.
+    /// </summary>
+    private static string[] RankExecutables(string[] executables, string[] files)
+    {
+        if (executables.Length <= 1) return executables;
+        var siblings = files.GroupBy(path => Path.GetDirectoryName(path) ?? "", DirectoryPath.Comparer)
+            .ToDictionary(group => group.Key, group => group.Select(Path.GetFileName).OfType<string>()
+                .ToHashSet(StringComparer.OrdinalIgnoreCase), DirectoryPath.Comparer);
+        var executableNames = executables.Select(Path.GetFileName).OfType<string>().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        string[] gameFiles = ["steam_api64.dll", "steam_api.dll", "ReShade.ini", "nvngx_dlss.dll", "dxgi.dll", "d3d11.dll", "d3d12.dll", "vulkan-1.dll"];
+        var gameNames = GameNameKeys(files, executables);
+        return executables.Select(path => (Path: path, Score: ScoreExecutable(path, siblings, executableNames, gameFiles, gameNames)))
+            .OrderByDescending(item => item.Score).ThenByDescending(item => SafeLength(item.Path))
+            .Select(item => item.Path).ToArray();
+    }
+
+    private static string[] GameNameKeys(string[] files, string[] executables)
+    {
+        // Folder names between the files' common root and the executables, flattened to letters and digits.
+        var root = executables.Select(Path.GetDirectoryName).OfType<string>().OrderBy(path => path.Length).FirstOrDefault();
+        var names = new List<string>();
+        for (var directory = root is null ? null : new DirectoryInfo(root); directory is not null && names.Count < 3; directory = directory.Parent)
+            names.Add(new string(directory.Name.Where(char.IsLetterOrDigit).ToArray()));
+        return names.Where(name => name.Length >= 3).ToArray();
+    }
+
+    private static int ScoreExecutable(string path, Dictionary<string, HashSet<string>> siblings,
+        HashSet<string> executableNames, string[] gameFiles, string[] gameNames)
+    {
+        var name = Path.GetFileNameWithoutExtension(path);
+        var near = siblings.GetValueOrDefault(Path.GetDirectoryName(path) ?? "");
+        var normalized = path.Replace('/', '\\');
+        var score = Is64BitExecutable(path) ? 100 : 0;
+        if (near is not null && near.Overlaps(gameFiles)) score += 40;
+        score += (int)Math.Min(SafeLength(path) / (4L * 1024 * 1024), 40);
+        if (normalized.Contains("\\Binaries\\Win64\\", StringComparison.OrdinalIgnoreCase)) score += 15;
+        // Where the user already installed ReShade or the add-on is the executable they actually run.
+        if (near is not null && (near.Contains("ReShade.ini") || near.Contains("ReShade.log") ||
+            near.Any(file => file.EndsWith(".addon64", StringComparison.OrdinalIgnoreCase)))) score += 60;
+        // The executable that carries the game's name beats tools and variants shipped beside it.
+        var compact = new string(name.Where(char.IsLetterOrDigit).ToArray());
+        // Only a tiebreaker between small launcher stubs (Unity variants); real game executables differ in size.
+        if (SafeLength(path) < 32L * 1024 * 1024 && compact.Length >= 3 && gameNames.Any(game => game.Contains(compact, StringComparison.OrdinalIgnoreCase))) score += 30;
+        if (ToolingPathSegments.Any(segment => normalized.Contains(segment, StringComparison.OrdinalIgnoreCase))) score -= 120;
+        var flatName = Regex.Replace(name, @"[ _\-.]*vr$", "", RegexOptions.IgnoreCase);
+        if (flatName.Length < name.Length && executableNames.Contains(flatName + ".exe")) score -= 60;
+        return score;
     }
 
     internal static bool HasEnabledSetting(string path, string key)
@@ -161,15 +242,24 @@ public sealed class GameAnalyzer
         catch { return false; }
     }
 
-    private static List<string> DetectApis(HashSet<string> names, IEnumerable<string> executables, IEnumerable<string> files)
+    private static List<string> DetectApis(HashSet<string> names, IEnumerable<string> executables, IEnumerable<string> files,
+        string directory, string displayName, out string source)
     {
         var executableArray = executables.Take(6).ToArray();
-        var active = DetectActiveApis(files);
-        if (active.Count > 0) return Ordered(active);
+        var fileArray = files.ToArray();
+        source = "";
+        var active = DetectActiveApis(fileArray);
+        if (active.Count > 0) { source = "ReShade.log"; return Ordered(active); }
+        var (fromGame, gameSource) = ApiEvidence.FromGameFiles(directory, executableArray.FirstOrDefault(), displayName);
+        if (fromGame.Count > 0) { source = gameSource; return Ordered(fromGame.ToHashSet(StringComparer.OrdinalIgnoreCase)); }
+        source = "static file evidence";
+        files = fileArray;
 
         if (names.Any(name => name.Equals("dxil.dll", StringComparison.OrdinalIgnoreCase) ||
                               name.Equals("D3D12Core.dll", StringComparison.OrdinalIgnoreCase))) return ["DX12"];
-        if (names.Contains("UnityPlayer.dll")) return ["DX11"];
+        if (names.Contains("UnityPlayer.dll") ||
+            executableArray.Any(exe => File.Exists(Path.Combine(Path.GetDirectoryName(exe) ?? "",
+                Path.GetFileNameWithoutExtension(exe) + "_Data", "globalgamemanagers")))) return ["DX11"];   // Unity's Windows default
 
         var imported = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var engineModules = files.Where(path => new[] { "UnityPlayer.dll", "GameAssembly.dll", "engine.dll", "renderer.dll" }
@@ -208,6 +298,7 @@ public sealed class GameAnalyzer
                      .OrderByDescending(SafeLastWrite))
         {
             var evidence = ReadEvidence(log);
+            // The first statement is the game's own device; later ones are secondary (interop/overlay) devices.
             var explicitApi = Regex.Match(evidence, @"api:\s*(d3d12|d3d11|d3d10|d3d9|vulkan|opengl)\b", RegexOptions.IgnoreCase);
             if (explicitApi.Success) return [MapApi(explicitApi.Groups[1].Value)];
             var redirectedApi = Regex.Match(evidence,
@@ -369,7 +460,8 @@ public sealed class GameAnalyzer
     {
         var name = Path.GetFileName(path);
         return IgnoredExecutables.Contains(name) ||
-               IgnoredExecutableFragments.Any(fragment => name.Contains(fragment, StringComparison.OrdinalIgnoreCase));
+               IgnoredExecutableFragments.Any(fragment => name.Contains(fragment, StringComparison.OrdinalIgnoreCase)) ||
+               ToolingPathSegments.Any(segment => path.Replace('/', '\\').Contains(segment, StringComparison.OrdinalIgnoreCase));
     }
 
     private static DateTime SafeLastWrite(string path)
@@ -384,7 +476,7 @@ public sealed class GameAnalyzer
         catch { return true; }
     }
 
-    private static string? FindSteamAppId(string path)
+    private static (string? AppId, string? Name) FindSteamManifest(string path)
     {
         try
         {
@@ -398,13 +490,14 @@ public sealed class GameAnalyzer
                     if (!string.Equals(InstallDirPattern.Match(text).Groups["value"].Value, gameRoot.Name,
                         StringComparison.OrdinalIgnoreCase)) continue;
                     var appId = AppIdPattern.Match(text).Groups["value"].Value;
-                    return appId.Length == 0 ? null : appId;
+                    var title = ManifestName.Match(text).Groups["value"].Value.Trim();
+                    return (appId.Length == 0 ? null : appId, title.Length == 0 ? null : title);
                 }
-                return null;
+                return (null, null);
             }
         }
         catch { }
-        return null;
+        return (null, null);
     }
 
     private static ImageSource? LoadIcon(string? executable)

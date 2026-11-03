@@ -73,7 +73,7 @@
                             </Border>
                             <TextBlock Text="Safe setup and recovery" Foreground="{StaticResource MutedBrush}"
                                        Margin="0,9,0,25" TextWrapping="Wrap" />
-                            <Button Content="Scan Steam" Click="ScanSteam_Click" />
+                            <Button Content="Scan Libraries" Click="ScanSteam_Click" />
                             <Button Content="Add Search Directory" Click="AddGame_Click" />
                             <Button Content="Refresh analysis" Click="Refresh_Click" />
                         </StackPanel>
@@ -85,9 +85,9 @@
                                     <TextBlock Text="BUNDLED DLSS RUNTIMES" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" />
                                     <TextBlock Text="Release builds include these files:"
                                                Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
-                                    <TextBlock Text="nvngx_dlss.dll&#x0a;nvngx_dlssg.dll&#x0a;nvngx_dlssnr.dll"
+                                    <TextBlock Text="nvngx_dlss.dll&#x0a;nvngx_dlssg.dll&#x0a;nvngx_dlssnr.dll&#x0a;RTX 50\nvngx_dlssnr.dll"
                                                Foreground="#E7EAF0" Margin="0,5,0,0" />
-                                    <TextBlock Text="The NR file is a modified community runtime; see the included notice."
+                                    <TextBlock Text="RTX 50 GPUs get NVIDIA's signed NR runtime; older GPUs get the SF community repack. See the included notice."
                                                Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
                                 </StackPanel>
                             </Border>

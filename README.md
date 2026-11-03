@@ -1,6 +1,6 @@
 # DLAssAss 5 Tool
 
-**Version 1.1.2** — [Download the Windows release](../../releases/tag/v1.1.2)
+**Version 1.1.4** — [Download the Windows release](../../releases/tag/v1.1.4)
 
 DLAssAss 5 Tool is a local Windows game-library manager for installing the
 DLSS 5 Super Anus ReShade add-on, its pinned DLSS runtime files,
@@ -10,13 +10,14 @@ installing ReShade with add-on support, and safely restoring replaced files.
 
 | GPU family | Status | Neural Rendering requirement |
 | --- | --- | --- |
-| ✅ GeForce RTX 50 Series | Supported | Official DLSS 5 Neural Rendering hardware. |
-| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 40 Series | Experimental | Uses the bundled modified community `nvngx_dlssnr.dll`. |
-| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 30 Series | Experimental | Uses the bundled modified community `nvngx_dlssnr.dll`. |
+| ✅ GeForce RTX 50 Series | Supported | Official DLSS 5 Neural Rendering hardware; uses the bundled NVIDIA-signed `nvngx_dlssnr.dll` 310.9.16. |
+| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 40 Series | Experimental | Uses the bundled SF community repack of `nvngx_dlssnr.dll` 310.8. |
+| <img src="assets/compatibility-experimental.svg" width="18" height="18" alt="Orange warning"> GeForce RTX 30 Series | Experimental | Uses the bundled SF community repack of `nvngx_dlssnr.dll` 310.8. |
 
-The bundled `nvngx_dlssnr.dll` is a modified community runtime and does not have
-a valid NVIDIA Authenticode signature. It is not an official NVIDIA build and
-cannot guarantee compatibility with every game, driver, or GPU.
+The tool installs NVIDIA's signed 310.9.16 Neural Rendering runtime on RTX 50 series
+GPUs and the SF community repack of 310.8 on older RTX GPUs. The repack does not have
+a valid NVIDIA Authenticode signature, is not an official NVIDIA build, and on NVIDIA
+driver 617.42 runs much slower with a weaker neural result than on earlier drivers.
 These statuses apply to DLSS 5 Neural Rendering; other DLSS features have their
 own hardware requirements.
 
@@ -88,10 +89,13 @@ then toggling NR or changing settings. This remains unresolved; see the deferred
   Rendering Resolution stages 100% and still requires **Apply**.
 - Debug, Runtime API, Links and About are the final four sections and start
   collapsed. About shows the addon version and build date/time. Windows Details
-  shows addon file version **1.1.2.31** (manager file version **1.1.2.0**).
+  shows addon file version **1.1.4.34** (manager file version **1.1.4.0**).
 
 These image controls are available in DX12 and supported DX11 games. The add-on
-does not require the external DLSS 5 Bridge. Vulkan scope is unchanged.
+does not require the external DLSS 5 Bridge. Vulkan games with native DLSS (for example Enshrouded) now
+run the neural pass on the game's DLSS output at 100% resolution: highlights are range-compressed so very bright
+pixels no longer produce corrupt tiles, and Transfer above 100%, Sharpness, Colour, Encoding and Diffuse White all
+apply. A Neural Rendering Resolution other than 100% still keeps the native Vulkan output.
 If safe working resources are unavailable, the addon retains native output.
 
 Upgrading the tool does not automatically update installed games. Close the game,
@@ -119,7 +123,7 @@ on native fallback. The first pass now participates in complete-group transition
 tracking, allowing additional-pass controls to resume. Sharpening stays independent
 of transfer, and interrupted dependent history resets on managed recovery.
 
-See [v1.1.2 release notes and validation](docs/MANAGER_1_1_2_RELEASE.md).
+See [v1.1.4 release notes and validation](docs/MANAGER_1_1_4_RELEASE.md).
 These changes do not establish that DX11 Present-hook flickering is fixed or guarantee
 correct output in every game. Experimental API support is unchanged.
 
@@ -169,13 +173,14 @@ Release archives include the pinned DLLs listed in `DLSS Files/README.md`.
    | --- | --- |
    | `nvngx_dlss.dll` | DLSS Super Resolution |
    | `nvngx_dlssg.dll` | DLSS Frame Generation |
-   | `nvngx_dlssnr.dll` | DLSS Ray Reconstruction / Neural Rendering |
+   | `nvngx_dlssnr.dll` | DLSS Neural Rendering, RTX 20/30/40 (SF 310.8 repack) |
+   | `RTX 50/nvngx_dlssnr.dll` | DLSS Neural Rendering, RTX 50 (NVIDIA 310.9.16) |
 
 4. Start `DLAssAss 5 Tool.exe`. The status bar confirms the bundled files are present.
 
 ## Using the tool
 
-1. Select **Scan Steam** to find Steam games automatically, or select
+1. Select **Scan Libraries** to find Steam, Epic, GOG and Xbox games automatically, or select
    **Add Search Directory** to scan another drive or folder.
 2. Select a game in Library View or Folder View.
 3. Review the detected executable, graphics API, ReShade state, add-on state,
@@ -212,7 +217,7 @@ so upgrades preserve existing game libraries and backups.
 - Graphics API detection is evidence-based. Confirm the selected API when a game
   offers multiple renderers.
 - Cover lookup may require a few moments after initial game discovery.
-- The bundled NR runtime is modified community software; review the included
+- The pre-RTX 50 NR runtime is modified community software; review the included
   hashes and notices before use.
 
 ## Building from source

@@ -1,0 +1,51 @@
+game,directory,executable,api,is64,native_dlss,dlss_dll,dlssg_dll,dlssnr_dll,reshade,addon,steam_appid,seconds
+"AC Black Flag Resynced","W:\Games\AC Black Flag Resynced","ACBlackFlag.exe","DX12",True,True,True,True,True,True,True,,0.89
+"AFOP","W:\Games\AFOP","afop_plus.exe","DX12",True,True,True,True,True,True,True,,0.65
+"American Truck Simulator","C:\program files (x86)\steam\steamapps\common\American Truck Simulator","bin\win_x64\amtrucks.exe","Vulkan / DX12 / DX11 / OpenGL",True,False,False,False,False,False,False,270880,0.34
+"Assassin's Creed Shadows","W:\Games\Assassin's Creed Shadows","ACShadows_Plus.exe","DX12",True,True,True,True,True,True,True,,1.45
+"assettocorsa","W:\SteamLibrary\steamapps\common\assettocorsa","acs.exe","DX11",True,False,False,False,False,False,False,244210,0.32
+"Baldurs Gate 3","W:\SteamLibrary\steamapps\common\Baldurs Gate 3","bin\bg3.exe","DX11",True,False,True,False,False,False,False,1086940,0.09
+"Beat Saber","W:\SteamLibrary\steamapps\common\Beat Saber","Beat Saber.exe","DX11",True,False,False,False,False,False,False,620980,0.13
+"Bin","W:\Games\XXMI Launcher\Resources\Bin","XXMI Launcher.exe","DX12 / DX11 / DX10 / OpenGL",True,False,False,False,False,False,False,,0.43
+"Bin64","W:\Games\StarCitizen\LIVE\Bin64","StarCitizen.exe","DX12 / DX9",True,False,True,True,False,False,False,,0.51
+"binaries","W:\Games\Crusader Kings III\binaries","ck3.exe","DX12",True,False,False,False,False,False,False,,0.54
+"Borderless Gaming","W:\SteamLibrary\steamapps\common\Borderless Gaming","BorderlessGaming.exe","Vulkan / DX12 / DX11 / DX10 / DX9 / OpenGL",True,False,False,False,False,False,False,388080,0.50
+"Cyberpunk 2077","W:\SteamLibrary\steamapps\common\Cyberpunk 2077","bin\x64\Cyberpunk2077.exe","DX12",True,True,True,True,True,True,True,1091500,0.18
+"Dead Space (2023)","Z:\SteamLibrary\steamapps\common\Dead Space (2023)","Dead Space.exe","DX12",True,False,True,True,True,True,True,1693980,0.26
+"DSX","C:\program files (x86)\steam\steamapps\common\DSX","(none)","Unknown",False,False,False,False,False,False,False,,0.01
+"Enshrouded","W:\SteamLibrary\steamapps\common\Enshrouded","enshrouded.exe","Vulkan",True,True,True,True,True,True,True,1203620,0.18
+"Fatekeeper","W:\SteamLibrary\steamapps\common\Fatekeeper","SLASHER\Binaries\Win64\SLASHER-Win64-Shipping.exe","DX12",True,False,False,False,True,True,False,2186990,0.11
+"FINAL FANTASY XIV Online","W:\SteamLibrary\steamapps\common\FINAL FANTASY XIV Online","game\ffxiv_dx11.exe","DX11",True,True,True,True,True,True,True,312060,1.14
+"Ghost of Tsushima DIRECTOR'S CUT","W:\SteamLibrary\steamapps\common\Ghost of Tsushima DIRECTOR'S CUT","GhostOfTsushima.exe","DX12",True,True,True,True,True,True,True,2215430,0.62
+"Gothic 1 Remake","W:\SteamLibrary\steamapps\common\Gothic 1 Remake","G1R\Binaries\Win64\G1R-Win64-Shipping.exe","DX12",True,False,True,False,True,True,True,1297900,0.17
+"Half-Life 2","C:\program files (x86)\steam\steamapps\common\Half-Life 2","(none)","DX9",False,False,False,False,False,False,False,,0.01
+"HoYoPlay","W:\Games\HoYoPlay","1.18.0.380\HYSafeMode.exe","DX12",True,True,False,False,False,False,False,,0.60
+"Kenshi","W:\SteamLibrary\steamapps\common\Kenshi","kenshi_x64.exe","OpenGL",True,False,False,False,False,False,False,233860,0.18
+"KingdomComeDeliverance2","W:\SteamLibrary\steamapps\common\KingdomComeDeliverance2","Bin\Win64MasterMasterSteamPGO\KingdomCome.exe","DX12",True,True,True,True,True,True,True,1771300,0.13
+"Koikatsu HF Patch v3.34","Z:\SteamLibrary\steamapps\common\Koikatsu HF Patch v3.34","Koikatsu HF Patch v3.34.exe","Unknown",False,False,False,False,False,False,False,,0.24
+"Koikatsu Party","Z:\SteamLibrary\steamapps\common\Koikatsu Party","Koikatsu Party VR.exe","OpenGL",True,False,False,False,False,False,False,1073440,0.64
+"launcher","W:\Games\Crusader Kings III\launcher","dowser.exe","Unknown",True,False,False,False,False,False,False,,0.59
+"Lossless Scaling","W:\SteamLibrary\steamapps\common\Lossless Scaling","LosslessScaling.exe","Unknown",True,False,False,False,False,False,False,993090,0.04
+"Marvel's Spider-Man 2","Z:\SteamLibrary\steamapps\common\Marvel's Spider-Man 2","Spider-Man2.exe","DX12",True,True,True,True,False,False,False,2651280,0.07
+"METAPHOR","W:\SteamLibrary\steamapps\common\METAPHOR","METAPHOR.exe","DX11",True,False,False,False,False,True,False,2679460,0.49
+"Morrowind","C:\program files (x86)\steam\steamapps\common\Morrowind","OpenMW 0.51.0\openmw.exe","OpenGL",True,False,True,False,True,True,True,22320,0.20
+"OVRdrop","Z:\SteamLibrary\steamapps\common\OVRdrop","OVRdrop.exe","OpenGL",False,False,False,False,False,False,False,586210,0.90
+"OVR_AdvancedSettings","W:\SteamLibrary\steamapps\common\OVR_AdvancedSettings","AdvancedSettings.exe","DX12",True,False,False,False,False,False,False,1009850,0.04
+"P5R","Z:\SteamLibrary\steamapps\common\P5R","P5R.exe","DX11",True,False,True,True,True,True,True,1687950,0.55
+"ProjectZomboid","W:\SteamLibrary\steamapps\common\ProjectZomboid","ProjectZomboid64.exe","OpenGL",True,False,True,False,True,True,True,108600,0.94
+"Public","W:\Games\StarCitizen\LIVE\Tools\Public","(none)","Unknown",False,False,False,False,False,False,False,,0.00
+"Public","W:\Games\Soulframe\Downloaded\Public","Soulframe.x64.exe","Vulkan / DX12 / DX11",True,False,False,False,False,False,False,,0.33
+"ReShade","W:\Games\XXMI Launcher\ReShade","inject.exe","Unknown",True,False,False,False,False,True,False,,0.02
+"Resident Evil Requiem","W:\Games\Resident Evil Requiem","re9.exe","DX12",True,True,True,True,True,True,True,,0.52
+"S.T.A.L.K.E.R. 2 Heart of Chornobyl","W:\SteamLibrary\steamapps\common\S.T.A.L.K.E.R. 2 Heart of Chornobyl","(none)","Unknown",False,False,False,False,False,False,False,,0.00
+"Skyrim Special Edition","W:\SteamLibrary\steamapps\common\Skyrim Special Edition","SkyrimSE.exe","DX11",True,False,False,False,False,False,False,489830,0.11
+"Steam Controller Configs","C:\program files (x86)\steam\steamapps\common\Steam Controller Configs","(none)","Unknown",False,False,False,False,False,False,False,,0.00
+"SteamVR","Z:\SteamLibrary\steamapps\common\SteamVR","(none)","Unknown",False,False,False,False,False,False,False,,0.00
+"Steamworks Shared","C:\program files (x86)\steam\steamapps\common\Steamworks Shared","_CommonRedist\DotNet\4.8\ndp48-x86-x64-allos-enu.exe","Unknown",False,False,False,False,False,False,False,228980,0.79
+"The Last of Us Part II","W:\SteamLibrary\steamapps\common\The Last of Us Part II","tlou-ii-l.exe","DX12",True,True,True,True,True,True,True,2531310,0.15
+"The Witcher 3","W:\SteamLibrary\steamapps\common\The Witcher 3","bin\x64_dx12\witcher3.exe","DX12",True,True,True,True,True,True,True,292030,0.58
+"Trails in the Sky 1st Chapter","W:\SteamLibrary\steamapps\common\Trails in the Sky 1st Chapter","sora_1st.exe","DX11",True,True,True,True,True,True,True,3375780,0.24
+"TurnSignal","Z:\SteamLibrary\steamapps\common\TurnSignal","TurnSignal.exe","DX11",False,False,False,False,False,False,False,689580,0.05
+"wallpaper_engine","Z:\SteamLibrary\steamapps\common\wallpaper_engine","bin\wallpaperui.exe","DX12",True,False,False,False,False,False,False,431960,0.37
+"Win64","W:\Games\The Blood of Dawnwalker\Engine\Binaries\Win64","EpicWebHelper.exe","Unknown",True,False,False,False,False,False,False,,0.08
+"Win64","W:\Games\The Blood of Dawnwalker\Dawnwalker\Binaries\Win64","Dawnwalker.exe","DX12",True,False,True,True,True,True,True,,0.22

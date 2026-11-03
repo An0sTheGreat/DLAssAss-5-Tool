@@ -3,6 +3,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 PlayPulseTest.Run();
+DetectionTests.Run();
 
 var root = Path.Combine(Path.GetTempPath(), "DLAssAss5Tool-" + Guid.NewGuid().ToString("N"));
 var game = Path.Combine(root, "steamapps", "common", "Game");
@@ -33,7 +34,7 @@ try
 
     var analyzer = new GameAnalyzer();
     var scanner = new GameScanner();
-    var service = new InstallerService(backups, payload);
+    var service = new InstallerService(backups, payload, blackwellGpu: false);
     var analysis = analyzer.Analyze(game);
     Require(analysis.HasReShade, "ReShade detection failed.");
     Require(analysis.HasDlss && analysis.UsesIntegratedFeeder && analysis.RequiresIntegratedFeeder &&
@@ -228,6 +229,22 @@ try
     var dialogCode = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "ThemedDialog.xaml.cs"));
     Require(dialogCode.Contains("PrimaryButton.Content = \"YES\"") &&
         dialogCode.Contains("CancelButton.Content = \"NO\""), "Confirmation buttons must say Yes and No.");
+    // RTX 50 series: the NR runtime comes from the RTX 50 folder; SR/FG stay shared.
+    Directory.CreateDirectory(Path.Combine(dlss, GpuRuntime.Rtx50Folder));
+    File.WriteAllText(Path.Combine(dlss, GpuRuntime.Rtx50Folder, "nvngx_dlssnr.dll"), "nvidia 310.9");
+    var nrBefore = File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll"));
+    var blackwell = new InstallerService(backups, payload, blackwellGpu: true);
+    File.WriteAllText(Path.Combine(installDirectory, "ReShade.ini"), "[GENERAL]");
+    var rtx50 = blackwell.Install(executable, dlss, true);
+    Require(rtx50.Success, "RTX 50 install failed: " + rtx50.Message);
+    Require(File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == "nvidia 310.9" &&
+        File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlss.dll")) == "nvngx_dlss.dll", "RTX 50 runtime selection failed.");
+    Require(blackwell.RestoreLatest(executable).Success &&
+        File.ReadAllText(Path.Combine(installDirectory, "nvngx_dlssnr.dll")) == nrBefore, "RTX 50 runtime restore failed.");
+    foreach (var name in new[] { "NVIDIA GeForce RTX 5080", "NVIDIA GeForce RTX 5070 Laptop GPU", "NVIDIA RTX PRO 6000 Blackwell Workstation Edition" })
+        Require(GpuRuntime.IsBlackwellName(name), $"Blackwell GPU not recognised: {name}");
+    foreach (var name in new[] { "NVIDIA GeForce RTX 4090", "NVIDIA GeForce RTX 3050", "NVIDIA GeForce GTX 1080", "AMD Radeon RX 7900 XTX" })
+        Require(!GpuRuntime.IsBlackwellName(name), $"Non-Blackwell GPU misclassified: {name}");
     Console.WriteLine("PASS: paths, discovery, API/AppID analysis, covers, ReShade modes, preferences, install, external-bridge preservation, addon-only update/refusal, backup, and restore");
 }
 finally

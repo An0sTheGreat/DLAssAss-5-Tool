@@ -7,14 +7,19 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="DetectReport\**" />
     <None Include="..\MainWindow.xaml" Link="MainWindow.xaml" CopyToOutputDirectory="Always" />
     <Compile Include="..\GlobalUsings.cs" Link="GlobalUsings.cs" />
     <Compile Include="..\Core\DirectoryPath.cs" Link="Core\DirectoryPath.cs" />
     <Compile Include="..\Core\AppStore.cs" Link="Core\AppStore.cs" />
     <Compile Include="..\Core\GameEntry.cs" Link="Core\GameEntry.cs" />
     <Compile Include="..\Core\GameAnalyzer.cs" Link="Core\GameAnalyzer.cs" />
+    <Compile Include="..\Core\BinaryEvidence.cs" Link="Core\BinaryEvidence.cs" />
+    <Compile Include="..\Core\ApiEvidence.cs" Link="Core\ApiEvidence.cs" />
+    <Compile Include="..\Core\GameNaming.cs" Link="Core\GameNaming.cs" />
     <Compile Include="..\Core\GameScanner.cs" Link="Core\GameScanner.cs" />
     <Compile Include="..\Core\InstallerService.cs" Link="Core\InstallerService.cs" />
+    <Compile Include="..\Core\GpuRuntime.cs" Link="Core\GpuRuntime.cs" />
     <Compile Include="..\Core\CoverArtService.cs" Link="Core\CoverArtService.cs" />
     <Compile Include="..\Core\ReShadeService.cs" Link="Core\ReShadeService.cs" />
     <Compile Include="..\Core\NonDlssSetupService.cs" Link="Core\NonDlssSetupService.cs" />

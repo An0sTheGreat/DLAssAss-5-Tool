@@ -7,6 +7,8 @@ public sealed class ManagerSettings
     public List<string> GameDirectories { get; set; } = [];
     public List<string> SearchDirectories { get; set; } = [];
     public List<string> HiddenGameDirectories { get; set; } = [];
+    /// <summary>Folders the user explicitly unhid although detection classed them as tools/non-games.</summary>
+    public List<string> UnhiddenGameDirectories { get; set; } = [];
     public Dictionary<string, string> CustomGameNames { get; set; } = new(DirectoryPath.Comparer);
     public Dictionary<string, string> CustomArtworkPaths { get; set; } = new(DirectoryPath.Comparer);
     public string? DlssFilesDirectory { get; set; }
@@ -45,6 +47,7 @@ public sealed class AppStore
             settings.GameDirectories = DirectoryPath.NormalizeDistinct(settings.GameDirectories);
             settings.SearchDirectories = DirectoryPath.NormalizeDistinct(settings.SearchDirectories);
             settings.HiddenGameDirectories = DirectoryPath.NormalizeDistinct(settings.HiddenGameDirectories);
+            settings.UnhiddenGameDirectories = DirectoryPath.NormalizeDistinct(settings.UnhiddenGameDirectories);
             settings.CustomGameNames = NormalizeNames(settings.CustomGameNames);
             settings.CustomArtworkPaths = NormalizePaths(settings.CustomArtworkPaths);
             return settings;
@@ -60,6 +63,7 @@ public sealed class AppStore
         settings.GameDirectories = DirectoryPath.NormalizeDistinct(settings.GameDirectories);
         settings.SearchDirectories = DirectoryPath.NormalizeDistinct(settings.SearchDirectories);
         settings.HiddenGameDirectories = DirectoryPath.NormalizeDistinct(settings.HiddenGameDirectories);
+        settings.UnhiddenGameDirectories = DirectoryPath.NormalizeDistinct(settings.UnhiddenGameDirectories);
         settings.CustomGameNames = NormalizeNames(settings.CustomGameNames);
         settings.CustomArtworkPaths = NormalizePaths(settings.CustomArtworkPaths);
         Directory.CreateDirectory(DataDirectory);

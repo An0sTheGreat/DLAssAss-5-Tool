@@ -41,6 +41,7 @@ remains subject to its author's license and terms.
 
 ReShade, Dear ImGui, the NVIDIA NGX/DLSS SDK, DirectX headers, and Vulkan headers
 are external build/runtime dependencies. Binary release archives include the
-pinned DLSS runtime files documented in `DLSS Files/README.md`; the NR runtime is
-a modified community binary with an Authenticode hash mismatch. Consult each
+pinned DLSS runtime files documented in `DLSS Files/README.md`; the RTX 50 NR runtime
+is NVIDIA-signed, and the NR runtime for older GPUs is the SF community repack
+with an Authenticode hash mismatch. Consult each
 upstream project or SDK for its applicable terms.

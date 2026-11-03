@@ -8,8 +8,10 @@ Maintainers must place that file here before running `scripts/publish.ps1`.
 The binary is ignored by Git and validated against the pinned SHA-256 before
 packaging. The pinned NVIDIA runtime files are kept in `DLSS Files`.
 
-Manager `1.1.2` includes release addon `1.1.2-integrated-feeder.1`, Windows file
-version `1.1.2.31`, with independent controls for each pass, colour 100% and sharpness
+Manager `1.1.4` includes release addon `1.1.4-nr-runtime-compat.1`, Windows file
+version `1.1.4.34`. It runs NVIDIA's signed DLSSNR 310.9.16 (RTX 50) by recording its
+commands into the game's NGX command-list domain, keeps the SF 310.8 repack on the
+native list, and adds opt-in `DiagnosticTelemetry=1`. Retained from 1.1.3: independent controls for each pass, colour 100% and sharpness
 0% defaults, shared sequential-pass scratch resources, and fence-drained admission
 when increasing passes. Compact native resolution controls remain available when
 scaled allocation fails, provided their smaller allocation fits safely. The nested-SR guard
@@ -39,4 +41,4 @@ the OFF image is a zero-pass comparison. Launch state is persistent, and the edg
 masking path has a complete bypass switch. Cyberpunk shimmering remains unresolved.
 The integrated build also contains DLSS5 Feeder 1.16.0-beta.6 and is enabled
 only when the manager writes `managed_non_dlss=1` for a supported non-DLSS game.
-SHA-256: `A764CB6D4E0E7A52D7B6D6DF706C57FB3361900DCA264BA9CF8E2689B877B235`.
+SHA-256: `3AF920C783F77C1DAFF2F6865305375350D7EF575CD813632DFBD0123FA18870`.

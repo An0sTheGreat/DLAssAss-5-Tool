@@ -33,12 +33,16 @@ public sealed class InstallerService
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private readonly string _backupRoot;
     private readonly string _payloadDirectory;
+    public bool BlackwellGpu { get; }
 
-    public InstallerService(string backupRoot, string? payloadDirectory = null)
+    public InstallerService(string backupRoot, string? payloadDirectory = null, bool? blackwellGpu = null)
     {
         _backupRoot = backupRoot;
         _payloadDirectory = payloadDirectory ?? Path.Combine(AppContext.BaseDirectory, "Payload");
+        BlackwellGpu = blackwellGpu ?? GpuRuntime.HasBlackwellGpu();
     }
+
+    public string DlssSourcePath(string dlssDirectory, string name) => GpuRuntime.SourcePath(dlssDirectory, name, BlackwellGpu);
 
     public InstallResult Install(string executablePath, string dlssDirectory, bool includeDlssFiles,
         IEnumerable<InstallSource>? additionalFiles = null)
@@ -49,9 +53,9 @@ public sealed class InstallerService
         var sources = new List<InstallSource> { new(addon, AddonName) };
         if (includeDlssFiles)
         {
-            var missing = RequiredDlssFiles.Where(name => !File.Exists(Path.Combine(dlssDirectory, name))).ToArray();
+            var missing = RequiredDlssFiles.Where(name => !File.Exists(DlssSourcePath(dlssDirectory, name))).ToArray();
             if (missing.Length > 0) return Fail("Required bundled DLSS files are missing: " + string.Join(", ", missing));
-            sources.AddRange(RequiredDlssFiles.Select(name => new InstallSource(Path.Combine(dlssDirectory, name), name)));
+            sources.AddRange(RequiredDlssFiles.Select(name => new InstallSource(DlssSourcePath(dlssDirectory, name), name)));
         }
         if (additionalFiles is not null) sources.AddRange(additionalFiles);
         return InstallFiles(executablePath, sources);
